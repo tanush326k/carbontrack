@@ -270,19 +270,6 @@ function updateUIElements() {
     
     // Ratio of current footprint to the target limit
     const pct = Math.min(appSummary.current_estimate / appSummary.target, 1.5); // cap representation at 150% visual
-    const offset = circumference - (pct * circumference);
-    
-    if (progressCircleBar) {
-        progressCircleBar.style.strokeDasharray = `${circumference} ${circumference}`;
-        progressCircleBar.style.strokeDashoffset = isNaN(offset) ? circumference : offset;
-        
-        // Color circle bar if over limit
-        if (appSummary.current_estimate > appSummary.target) {
-            progressCircleBar.style.stroke = "var(--red)";
-        } else {
-            progressCircleBar.style.stroke = "var(--mint)";
-        }
-    }
     
     const pctLabelVal = Math.round(pct * 100);
     if (progressPercentageLabel) {
@@ -395,9 +382,16 @@ function renderHabitsAndTips(tips, adopted) {
     }
 }
 
+let currentCalcController = null;
+
 // API: Calculate footprint from form
 async function handleCalculate(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    
+    if (currentCalcController) {
+        currentCalcController.abort();
+    }
+    currentCalcController = new AbortController();
 
     const carKm = parseFloat(document.getElementById("calc-car-km").value) || 0;
     const carType = document.getElementById("calc-car-type").value;
@@ -429,7 +423,8 @@ async function handleCalculate(e) {
         const res = await fetch(`${API_BASE}/api/calculate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: currentCalcController.signal
         });
 
         if (!res.ok) throw new Error("Calculation request failed");
@@ -439,6 +434,7 @@ async function handleCalculate(e) {
         renderCalcCharts(results);
         await handleUseCalculatorAsBaseline(true);
     } catch (err) {
+        if (err.name === 'AbortError') return;
         alert("Could not compute carbon calculations: " + err.message);
     }
 }
@@ -815,8 +811,20 @@ async function fetchAIAndCommunity() {
 // Initialize Three.js Earth
 function init3DEarth() {
     const container = document.getElementById('earth-container');
-    if(!container) return;
-    
+    if (!container) return;
+
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) throw new Error("WebGL not supported");
+    } catch (e) {
+        container.innerHTML = `<div id="earth-error" style="color: var(--text-secondary); text-align: center; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <i class="fa-solid fa-globe" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <p>3D Earth requires WebGL support.</p>
+        </div>`;
+        return;
+    }
+
     const scene = new THREE.Scene();
     const w = container.clientWidth || 300;
     const h = container.clientHeight || 180;
