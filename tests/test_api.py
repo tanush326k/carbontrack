@@ -140,3 +140,23 @@ def test_compute_recommendations_standalone():
     assert isinstance(recs, list)
     assert len(recs) > 0
     assert all(isinstance(r, str) for r in recs)
+
+def test_ai_coach():
+    resp = client.get("/api/coach")
+    assert resp.status_code == 200
+    assert "insight" in resp.json()
+
+def test_simulate_footprint():
+    resp = client.post("/api/simulate", json={"ev_adoption": True, "vegan_diet": False})
+    assert resp.status_code == 200
+    assert "projected_savings" in resp.json()
+
+def test_leaderboard():
+    resp = client.get("/api/leaderboard")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 3
+
+def test_community_impact():
+    resp = client.get("/api/community")
+    assert resp.status_code == 200
+    assert "trees_saved" in resp.json()

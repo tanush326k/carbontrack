@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Dict
@@ -25,6 +27,18 @@ app.add_middleware(
     allow_methods=os.getenv("CORS_METHODS", "*").split(","),
     allow_headers=os.getenv("CORS_HEADERS", "*").split(",")
 )
+
+class SecurityMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self';"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+app.add_middleware(SecurityMiddleware)
 
 # DB Dependency
 def get_db():
@@ -409,6 +423,37 @@ def get_analytics_summary(db: Session = Depends(get_db)):
         "score_suggestions": suggestions,
         "largest_emission_category": largest
     }
+
+# Mock AI Coach
+@app.get("/api/coach")
+def get_ai_coach(db: Session = Depends(get_db)):
+    """AI Sustainability Coach insights."""
+    return {"insight": "Based on your recent transport logs, switching 2 trips to EV could save 15kg CO2e this week. You are on a 5-day streak!"}
+
+# Predictive Simulator
+@app.post("/api/simulate")
+def simulate_footprint(scenario: dict):
+    """Simulate future footprint."""
+    savings = 0
+    if scenario.get("ev_adoption"): savings += 150
+    if scenario.get("vegan_diet"): savings += 60
+    return {"projected_savings": savings, "new_baseline": 550 - savings}
+
+# Leaderboard
+@app.get("/api/leaderboard")
+def get_leaderboard():
+    """Global Leaderboards."""
+    return [
+        {"rank": 1, "user": "EcoWarrior99", "score": 980},
+        {"rank": 2, "user": "GreenGuru", "score": 850},
+        {"rank": 3, "user": "You", "score": 400}
+    ]
+
+# Community Impact
+@app.get("/api/community")
+def get_community_impact():
+    """Community Impact Dashboard."""
+    return {"trees_saved": 15420, "cars_removed": 340, "energy_saved": 89000}
 
 # Create static directory if it doesn't exist
 static_dir = os.path.join(os.path.dirname(__file__), "static")

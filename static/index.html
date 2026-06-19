@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoTrace - Premium Carbon Tracker & Insights</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <meta name="description" content="Premium AI-powered sustainability platform">
     <!-- Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- ChartJS for Premium Visualizations -->
+    <!-- ChartJS and Three.js for Premium Visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -123,6 +127,25 @@
                         <span class="metric-sub">Monthly reduction limit</span>
                     </div>
                 </div>
+            </div>
+        </section>
+        
+        <!-- NEW PREMIUM FEATURES (AI, Simulator, Leaderboard, Earth) -->
+        <section class="premium-features-row">
+            <div class="stat-card ai-coach-card">
+                <h3><i class="fa-solid fa-robot text-purple"></i> AI Sustainability Coach</h3>
+                <div id="ai-coach-insight" class="ai-insight">Analyzing your habits...</div>
+            </div>
+            <div class="stat-card community-card">
+                <h3><i class="fa-solid fa-globe text-blue"></i> Global Community Impact</h3>
+                <div class="community-stats">
+                    <div><i class="fa-solid fa-tree text-mint"></i> <span id="comm-trees">0</span> Trees Saved</div>
+                    <div><i class="fa-solid fa-car-burst text-red"></i> <span id="comm-cars">0</span> Cars Removed</div>
+                </div>
+            </div>
+            <div class="stat-card earth-card">
+                <h3>Interactive 3D Earth</h3>
+                <div id="earth-container"></div>
             </div>
         </section>
 

@@ -106,6 +106,17 @@ window.addEventListener("DOMContentLoaded", () => {
     setupCategoryHandler();
     loadDashboard();
     
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+
+    // Initialize 3D Earth
+    init3DEarth();
+    
+    // Fetch AI and Community
+    fetchAIAndCommunity();
+
     // Form submissions
     calculatorForm.addEventListener("submit", handleCalculate);
     document.getElementById("activity-logger-form").addEventListener("submit", handleAddLog);
@@ -748,6 +759,61 @@ function updateBadgeCount(count) {
     if (countLabel) {
         countLabel.textContent = `${count} Unlocked`;
     }
+}
+
+// Fetch AI and Community Premium Insights
+async function fetchAIAndCommunity() {
+    try {
+        const [coachRes, commRes] = await Promise.all([
+            fetch(`${API_BASE}/api/coach`),
+            fetch(`${API_BASE}/api/community`)
+        ]);
+        if (coachRes.ok) {
+            const data = await coachRes.json();
+            document.getElementById("ai-coach-insight").innerHTML = `<p>${data.insight}</p>`;
+        }
+        if (commRes.ok) {
+            const data = await commRes.json();
+            document.getElementById("comm-trees").textContent = data.trees_saved;
+            document.getElementById("comm-cars").textContent = data.cars_removed;
+        }
+    } catch(err) {
+        console.warn("Could not load AI features", err);
+    }
+}
+
+// Initialize Three.js Earth
+function init3DEarth() {
+    const container = document.getElementById('earth-container');
+    if(!container) return;
+    
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    
+    const geometry = new THREE.SphereGeometry(2.5, 32, 32);
+    // Use a wireframe/basic material to avoid needing external texture loading
+    const material = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true });
+    const earth = new THREE.Mesh(geometry, material);
+    
+    scene.add(earth);
+    camera.position.z = 7;
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        earth.rotation.y += 0.005;
+        renderer.render(scene, camera);
+    }
+    animate();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
 }
 
 // Ensure newly added functions are exported for debugging (optional)
