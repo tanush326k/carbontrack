@@ -1,4 +1,8 @@
-// Global variables
+// Global variables for Three.js Earth
+let earthRenderer = null;
+let earthScene = null;
+let earthCamera = null;
+let earthAnimationId = null;
 const API_BASE = ""; // Relative paths will resolve to same host in production
 let appSummary = {
     baseline: 550,
@@ -117,14 +121,19 @@ window.addEventListener("DOMContentLoaded", () => {
     // Fetch AI and Community
     fetchAIAndCommunity();
 
-    // Theme Toggle Logic
-    const themeToggle = document.getElementById("theme-toggle");
+    // Theme initialization and toggle – restore persisted theme
+    const themeToggle = document.getElementById('theme-toggle');
+    const persistedTheme = localStorage.getItem('theme');
+    const defaultTheme = persistedTheme || 'light';
+    document.documentElement.setAttribute('data-theme', defaultTheme);
     if (themeToggle) {
-        themeToggle.addEventListener("click", () => {
-            const currentTheme = document.documentElement.getAttribute("data-theme");
-            const newTheme = currentTheme === "light" ? "dark" : "light";
-            document.documentElement.setAttribute("data-theme", newTheme);
-            themeToggle.innerHTML = newTheme === "light" ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        themeToggle.innerHTML = defaultTheme === 'light' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeToggle.innerHTML = next === 'light' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
         });
     }
 
@@ -142,26 +151,28 @@ window.addEventListener("DOMContentLoaded", () => {
         }, 300);
     };
 
-    // Setup slider real-time value updates
-    const sliders = document.querySelectorAll('.premium-slider');
-    sliders.forEach(slider => {
-        slider.addEventListener('input', (e) => {
-            const valSpan = document.getElementById('val-' + e.target.id);
-            if (valSpan) valSpan.textContent = e.target.value;
-            if(e.target.id.startsWith("calc-")) {
+    // Slider and select initialization – guarded to avoid duplicate listeners
+    if (!window._slidersInitialized) {
+        window._slidersInitialized = true;
+        const sliders = document.querySelectorAll('.premium-slider');
+        sliders.forEach(slider => {
+            slider.addEventListener('input', e => {
+                const valSpan = document.getElementById('val-' + e.target.id);
+                if (valSpan) valSpan.textContent = e.target.value;
+                if (e.target.id.startsWith('calc-')) {
+                    updateLocalCalculator();
+                }
+                debouncedCalculate();
+            });
+        });
+        const selects = calculatorForm.querySelectorAll('select');
+        selects.forEach(select => {
+            select.addEventListener('change', () => {
                 updateLocalCalculator();
-            }
-            debouncedCalculate();
+                debouncedCalculate();
+            });
         });
-    });
-
-    const selects = calculatorForm.querySelectorAll('select');
-    selects.forEach(select => {
-        select.addEventListener('change', () => {
-            updateLocalCalculator();
-            debouncedCalculate();
-        });
-    });
+    }
 });
 
 // Dynamic options update in logging form
@@ -867,10 +878,27 @@ function init3DEarth() {
     const container = document.getElementById('earth-container');
     if (!container) return;
 
+    // Dispose previous Earth if exists
+    if (earthRenderer) {
+        // Cancel animation frame
+        if (earthAnimationId) cancelAnimationFrame(earthAnimationId);
+        // Dispose renderer and lose context
+        earthRenderer.dispose();
+        if (typeof earthRenderer.forceContextLoss === 'function') {
+            earthRenderer.forceContextLoss();
+        }
+        // Clean up references
+        earthRenderer = null;
+        earthScene = null;
+        earthCamera = null;
+        earthAnimationId = null;
+    }
+
+    // Verify WebGL support
     try {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) throw new Error("WebGL not supported");
+        const testCanvas = document.createElement('canvas');
+        const gl = testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
+        if (!gl) throw new Error('WebGL not supported');
     } catch (e) {
         container.innerHTML = `<div id="earth-error" style="color: var(--text-secondary); text-align: center; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
             <i class="fa-solid fa-globe" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
@@ -879,46 +907,48 @@ function init3DEarth() {
         return;
     }
 
+    // Create scene, camera, renderer
     const scene = new THREE.Scene();
-    let w = container.clientWidth > 0 ? container.clientWidth : 300;
-    let h = container.clientHeight > 0 ? container.clientHeight : 180;
+    const w = container.clientWidth > 0 ? container.clientWidth : 300;
+    const h = container.clientHeight > 0 ? container.clientHeight : 180;
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    
     renderer.setSize(w, h);
     renderer.setPixelRatio(window.devicePixelRatio || 1);
-    
+
+    // Clear container and attach renderer canvas
     container.innerHTML = '';
-    renderer.domElement.style.display = 'block';
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
     container.appendChild(renderer.domElement);
-    
+
+    // Earth mesh
     const geometry = new THREE.SphereGeometry(2.5, 32, 32);
     const material = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, metalness: 0.2 });
     const earth = new THREE.Mesh(geometry, material);
-    
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(earth);
+
+    // Lighting – ambient, directional, hemisphere for subtle rim effect
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
-    
-    scene.add(earth);
+
     camera.position.z = 7;
-    
+
+    // Animation loop
     function animate() {
-        requestAnimationFrame(animate);
+        earthAnimationId = requestAnimationFrame(animate);
         earth.rotation.y += 0.005;
         renderer.render(scene, camera);
     }
     animate();
-    
+
+    // Resize handling
     const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
+        for (const entry of entries) {
             const rw = entry.contentRect.width;
             const rh = entry.contentRect.height;
             if (rw > 0 && rh > 0) {
@@ -929,6 +959,13 @@ function init3DEarth() {
         }
     });
     resizeObserver.observe(container);
+
+    // Store globals for later disposal
+    earthRenderer = renderer;
+    earthScene = scene;
+    earthCamera = camera;
+}
+
 }
 
 // Ensure newly added functions are exported for debugging (optional)
