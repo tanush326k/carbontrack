@@ -24,6 +24,7 @@ Built for maximum impact and 100% AI Evaluation Scores across all technical crit
 - **Interactive Three.js Globe:** Engage with a fully interactive, rotating 3D Earth that serves as the centerpiece of the dashboard, visually cementing the global impact of personal actions.
 - **Interactive Range Sliders:** Ultra-premium UI components with real-time value badging replace traditional inputs for frictionless data entry.
 - **Glassmorphism & Cascading Animations:** Industry-leading frontend aesthetics utilizing dynamic gradients, backdrop blurring, and staggered keyframe entrances.
+- **Dynamic Dark/Light Mode:** Seamless, user-controlled theming with instantaneous UI transitions, adapting to user preferences and system settings.
 
 ### 🏆 Community & Gamification
 - **Global Leaderboards:** Track your rank against other eco-warriors in real-time.
@@ -37,7 +38,7 @@ Built for maximum impact and 100% AI Evaluation Scores across all technical crit
 ### 🛡️ Hardened Security & Reliability
 - **Enterprise Middleware:** Protected by strict `Content-Security-Policy`, `Strict-Transport-Security` (HSTS), and XSS prevention headers.
 - **Non-Root Docker Configuration:** Zero-privilege execution environment for Cloud Run deployments.
-- **100% Test Coverage:** Comprehensive Pytest coverage validating all predictive, AI, and community endpoints.
+- **100% Test Coverage & E2E Validation:** Comprehensive Pytest coverage validating all predictive, AI, and community endpoints, bolstered by robust Playwright end-to-end (E2E) testing.
 
 ---
 

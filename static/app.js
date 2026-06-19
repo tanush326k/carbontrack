@@ -117,6 +117,17 @@ window.addEventListener("DOMContentLoaded", () => {
     // Fetch AI and Community
     fetchAIAndCommunity();
 
+    // Theme Toggle Logic
+    const themeToggle = document.getElementById("theme-toggle");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+            const currentTheme = document.documentElement.getAttribute("data-theme");
+            const newTheme = currentTheme === "light" ? "dark" : "light";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            themeToggle.innerHTML = newTheme === "light" ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        });
+    }
+
     // Form submissions
     calculatorForm.addEventListener("submit", handleCalculate);
     document.getElementById("activity-logger-form").addEventListener("submit", handleAddLog);

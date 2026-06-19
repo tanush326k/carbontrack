@@ -455,6 +455,41 @@ def get_community_impact():
     """Community Impact Dashboard."""
     return {"trees_saved": 15420, "cars_removed": 340, "energy_saved": 89000}
 
+# Weekly Challenges & Streaks
+@app.get("/api/challenges")
+def get_challenges():
+    """Weekly Challenges and Streaks system."""
+    return {
+        "streak": {"current": 5, "milestone": 7, "reward": "🔥 Green Streak Badge"},
+        "challenges": [
+            {"title": "Recycle for 5 consecutive days", "progress": 80, "xp": 50, "completed": False},
+            {"title": "Use public transport 3 times", "progress": 100, "xp": 100, "completed": True},
+            {"title": "Reduce food waste this week", "progress": 40, "xp": 75, "completed": False}
+        ]
+    }
+
+# PDF Report Generation (Mocked for Demo as HTML)
+from fastapi.responses import HTMLResponse
+@app.get("/api/report", response_class=HTMLResponse)
+def generate_report():
+    """Generates a professional sustainability report."""
+    html_content = """
+    <html>
+        <head><title>EcoTrace Sustainability Report</title></head>
+        <body style="font-family: sans-serif; padding: 40px; color: #333;">
+            <h1 style="color: #10b981;">EcoTrace Premium Report</h1>
+            <h2>Sustainability Score: 92/100</h2>
+            <h3>Weekly Highlights</h3>
+            <ul>
+                <li>Trees Saved Equivalent: 15</li>
+                <li>EV Adoption Savings: 150kg CO2</li>
+            </ul>
+            <p>Keep up the great work as an Earth Guardian!</p>
+        </body>
+    </html>
+    """
+    return html_content
+
 # Create static directory if it doesn't exist
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(static_dir, exist_ok=True)

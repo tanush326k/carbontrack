@@ -160,3 +160,14 @@ def test_community_impact():
     resp = client.get("/api/community")
     assert resp.status_code == 200
     assert "trees_saved" in resp.json()
+
+def test_challenges():
+    resp = client.get("/api/challenges")
+    assert resp.status_code == 200
+    assert "streak" in resp.json()
+    assert "challenges" in resp.json()
+
+def test_report():
+    resp = client.get("/api/report")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
