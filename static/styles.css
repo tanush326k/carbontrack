@@ -2,7 +2,7 @@
 :root {
     /* Core Colors */
     --bg-color: #07090b;
-    --card-bg: rgba(10, 18, 14, 0.65);
+    --card-bg: rgba(10, 18, 14, 0.85);
     --card-border: rgba(16, 185, 129, 0.15);
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
@@ -36,11 +36,15 @@
 
 [data-theme="light"] {
     --bg-color: #f1f5f9;
-    --card-bg: rgba(255, 255, 255, 0.85);
+    --card-bg: rgba(255, 255, 255, 0.95);
     --card-border: rgba(16, 185, 129, 0.3);
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --bg-gradient: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #f1f5f9 70%, #ffffff 100%);
+}
+
+[data-theme="light"] .glow-bg {
+    opacity: 0.4;
 }
 
 /* Reset and Core Layout */
@@ -725,6 +729,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    overflow: hidden;
 }
 
 /* BUTTONS */

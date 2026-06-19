@@ -148,13 +148,19 @@ window.addEventListener("DOMContentLoaded", () => {
         slider.addEventListener('input', (e) => {
             const valSpan = document.getElementById('val-' + e.target.id);
             if (valSpan) valSpan.textContent = e.target.value;
+            if(e.target.id.startsWith("calc-")) {
+                updateLocalCalculator();
+            }
             debouncedCalculate();
         });
     });
 
     const selects = calculatorForm.querySelectorAll('select');
     selects.forEach(select => {
-        select.addEventListener('change', debouncedCalculate);
+        select.addEventListener('change', () => {
+            updateLocalCalculator();
+            debouncedCalculate();
+        });
     });
 });
 
@@ -379,6 +385,54 @@ function renderHabitsAndTips(tips, adopted) {
             `;
             recommendedTipsList.appendChild(card);
         });
+    }
+}
+
+function updateLocalCalculator() {
+    const carKm = parseFloat(document.getElementById("calc-car-km").value) || 0;
+    const carType = document.getElementById("calc-car-type").value;
+    const publicKm = parseFloat(document.getElementById("calc-public-km").value) || 0;
+    const flights = parseFloat(document.getElementById("calc-flights").value) || 0;
+    const elec = parseFloat(document.getElementById("calc-elec").value) || 0;
+    const gas = parseFloat(document.getElementById("calc-gas").value) || 0;
+    const diet = document.getElementById("calc-diet").value;
+    const waste = parseFloat(document.getElementById("calc-waste").value) || 0;
+
+    const factors = { petrol_car: 0.19, diesel_car: 0.17, hybrid_car: 0.11, electric_vehicle: 0.05, train: 0.04, flight_long: 0.15 };
+    const transportTotal = (carKm * (factors[carType] || 0.19)) + (publicKm * 0.04) + (flights * 0.15);
+    const energyTotal = (elec * 0.233) + (gas * 0.203);
+    const dietFactors = { heavy_meat: 100, average_mixed: 75, vegetarian: 50, vegan: 40 };
+    const dietTotal = dietFactors[diet] || 75;
+    const wasteTotal = (waste * 4.3) * 0.5;
+
+    const res = {
+        transport: transportTotal,
+        energy: energyTotal,
+        diet: dietTotal,
+        waste: wasteTotal,
+        consumption: 0,
+        total: transportTotal + energyTotal + dietTotal + wasteTotal
+    };
+
+    lastCalculatorTotal = res.total;
+    renderCalcCharts(res);
+    
+    if(appSummary) {
+        appSummary.current_estimate = res.total;
+        appSummary.category_distribution = {
+            transport: transportTotal,
+            energy: energyTotal,
+            food: dietTotal,
+            waste: wasteTotal,
+            consumption: 0
+        };
+        renderDoughnutChart(appSummary.category_distribution);
+        updateUIElements();
+        
+        let s = Math.round(100 - (res.total / 10));
+        appSummary.carbon_score = Math.max(0, Math.min(100, s));
+        const scoreEl = document.getElementById('carbon-score-value');
+        if(scoreEl) scoreEl.textContent = appSummary.carbon_score;
     }
 }
 
@@ -826,28 +880,32 @@ function init3DEarth() {
     }
 
     const scene = new THREE.Scene();
-    const w = container.clientWidth || 300;
-    const h = container.clientHeight || 180;
+    let w = container.clientWidth > 0 ? container.clientWidth : 300;
+    let h = container.clientHeight > 0 ? container.clientHeight : 180;
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     
     renderer.setSize(w, h);
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    
+    container.innerHTML = '';
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
     container.appendChild(renderer.domElement);
     
-    const loadingEl = document.getElementById('earth-loading');
-    if(loadingEl) loadingEl.style.display = 'none';
-    
     const geometry = new THREE.SphereGeometry(2.5, 32, 32);
-    // Use a standard material with lighting
     const material = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, metalness: 0.2 });
     const earth = new THREE.Mesh(geometry, material);
     
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
-    
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
     
     scene.add(earth);
     camera.position.z = 7;
@@ -859,13 +917,18 @@ function init3DEarth() {
     }
     animate();
     
-    window.addEventListener('resize', () => {
-        const rw = container.clientWidth || 300;
-        const rh = container.clientHeight || 180;
-        camera.aspect = rw / rh;
-        camera.updateProjectionMatrix();
-        renderer.setSize(rw, rh);
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            const rw = entry.contentRect.width;
+            const rh = entry.contentRect.height;
+            if (rw > 0 && rh > 0) {
+                camera.aspect = rw / rh;
+                camera.updateProjectionMatrix();
+                renderer.setSize(rw, rh);
+            }
+        }
     });
+    resizeObserver.observe(container);
 }
 
 // Ensure newly added functions are exported for debugging (optional)
