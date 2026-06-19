@@ -60,7 +60,7 @@
                     <input type="number" id="target-goal-input" value="400" class="mini-input">
                     <span>kg</span>
                 </div>
-                <button id="save-goals-btn" class="icon-btn-save" title="Save Goals"><i class="fa-solid fa-circle-check"></i></button>
+                <button id="save-goals-btn" class="icon-btn-save" title="Save Goals" aria-label="Save Goals"><i class="fa-solid fa-circle-check"></i></button>
             </div>
         </header>
 
@@ -77,7 +77,7 @@
 <div class="stat-card main-progress-card">
     <h3>Emissions Distribution</h3>
     <div class="progress-container-circle">
-        <canvas id="emissions-doughnut"></canvas>
+        <canvas id="emissions-doughnut" aria-label="Emissions Distribution Chart" role="img"></canvas>
         <div class="progress-text-overlay">
             <span id="current-footprint-value">0.0</span>
             <span class="unit">kg CO2e</span>
@@ -207,7 +207,7 @@
                 <div id="calc-breakdown" class="calc-results-view hidden">
                     <h4 class="results-title">Calculated Monthly Breakdown:</h4>
                     <div class="chart-container-wrapper">
-                        <canvas id="calc-bar-chart-canvas"></canvas>
+                        <canvas id="calc-bar-chart-canvas" aria-label="Calculation Breakdown Bar Chart" role="img"></canvas>
                     </div>
                     <button type="button" id="use-as-baseline-btn" class="secondary-btn">
                         Set as Monthly Baseline

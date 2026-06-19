@@ -10,6 +10,10 @@ COPY . /app
 # Install runtime dependencies
 RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy pydantic
 
+# Add a non-root user for security
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
 # Expose the port FastAPI runs on (defaulting to 8000)
 ENV PORT=8000
 EXPOSE $PORT

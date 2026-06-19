@@ -28,6 +28,7 @@ app.add_middleware(
 
 # DB Dependency
 def get_db():
+    """Yield a database session."""
     db = models.SessionLocal()
     try:
         yield db
@@ -36,6 +37,7 @@ def get_db():
 
 # Helper function to check and unlock achievements dynamically
 def check_and_unlock_achievements(db: Session, goal: models.DBUserGoal, all_logs: List[models.DBActivityLog], adopted_actions: List[models.DBAdoptedAction]):
+    """Check for new achievements and unlock them based on user activity."""
     achievements_to_unlock = []
 
     # 1. First Steps (Logged 1 activity)
@@ -152,11 +154,13 @@ TIPS_CATALOG = [
 
 @app.get("/api/health")
 def health_check():
+    """Health check endpoint to verify service status."""
     return {"status": "healthy", "service": "carbon-tracker"}
 
 # Calculation Endpoint
 @app.post("/api/calculate", response_model=schemas.CalculationResult)
 def calculate_footprint(inputs: schemas.CarbonCalculatorInputs):
+    """Calculate the estimated monthly carbon footprint."""
     try:
         raw_dict = inputs.model_dump()
         result = calculations.calculate_total_monthly_footprint(raw_dict)
@@ -168,6 +172,7 @@ def calculate_footprint(inputs: schemas.CarbonCalculatorInputs):
 
 @app.post("/api/logs", response_model=schemas.DailyActivityResponse)
 def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)):
+    """Log a new daily activity and calculate its emissions."""
     # Calculate emissions for this specific entry
     emissions = 0.0
     cat = log_in.category
@@ -233,6 +238,7 @@ def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)):
 
 @app.get("/api/logs", response_model=List[schemas.DailyActivityResponse])
 def get_logs(db: Session = Depends(get_db)):
+    """Retrieve all activity logs ordered by date."""
     logs = db.query(models.DBActivityLog).order_by(models.DBActivityLog.date.desc()).all()
     res = []
     for log in logs:
@@ -249,6 +255,7 @@ def get_logs(db: Session = Depends(get_db)):
 
 @app.delete("/api/logs/{log_id}")
 def delete_log(log_id: int, db: Session = Depends(get_db)):
+    """Delete a specific activity log."""
     db_log = db.query(models.DBActivityLog).filter(models.DBActivityLog.id == log_id).first()
     if not db_log:
         raise HTTPException(status_code=404, detail="Log not found")
@@ -259,6 +266,7 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
 # Goals Endpoints
 @app.get("/api/goals", response_model=schemas.UserGoal)
 def get_goals(db: Session = Depends(get_db)):
+    """Retrieve the user's current baseline and target goals."""
     goal = db.query(models.DBUserGoal).first()
     if not goal:
         goal = models.DBUserGoal(baseline=550.0, target=400.0, xp=0, level=1)
@@ -269,6 +277,7 @@ def get_goals(db: Session = Depends(get_db)):
 
 @app.post("/api/goals", response_model=schemas.UserGoal)
 def update_goals(goal_in: schemas.UserGoal, db: Session = Depends(get_db)):
+    """Update the user's baseline and target goals."""
     goal = db.query(models.DBUserGoal).first()
     if not goal:
         goal = models.DBUserGoal(baseline=goal_in.baseline, target=goal_in.target, xp=0, level=1)
@@ -283,15 +292,18 @@ def update_goals(goal_in: schemas.UserGoal, db: Session = Depends(get_db)):
 # Recommendation Tips & Adopted Actions Endpoints
 @app.get("/api/tips")
 def get_tips():
+    """Retrieve the catalog of all available recommendation tips."""
     return TIPS_CATALOG
 
 @app.get("/api/actions")
 def get_adopted_actions(db: Session = Depends(get_db)):
+    """Retrieve the list of actions currently adopted by the user."""
     actions = db.query(models.DBAdoptedAction).all()
     return actions
 
 @app.post("/api/actions/{action_key}")
 def adopt_action(action_key: str, db: Session = Depends(get_db)):
+    """Adopt a new action/tip by its key."""
     # Find action details in our static list
     matched = next((t for t in TIPS_CATALOG if t["key"] == action_key), None)
     if not matched:
@@ -322,6 +334,7 @@ def adopt_action(action_key: str, db: Session = Depends(get_db)):
 
 @app.delete("/api/actions/{action_key}")
 def remove_adopted_action(action_key: str, db: Session = Depends(get_db)):
+    """Remove an adopted action."""
     db_action = db.query(models.DBAdoptedAction).filter(models.DBAdoptedAction.action_key == action_key).first()
     if not db_action:
         raise HTTPException(status_code=404, detail="Adopted action not found")
@@ -332,6 +345,7 @@ def remove_adopted_action(action_key: str, db: Session = Depends(get_db)):
 # Dashboard Analytics Summary
 @app.get("/api/summary")
 def get_analytics_summary(db: Session = Depends(get_db)):
+    """Generate a summary of analytics including scores, tips, and achievements."""
     # Get current goals
     goal = db.query(models.DBUserGoal).first()
     if not goal:

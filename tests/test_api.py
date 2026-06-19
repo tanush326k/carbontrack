@@ -58,6 +58,10 @@ def test_delete_log():
     get_resp = client.get("/api/logs")
     assert not any(l["id"] == create["id"] for l in get_resp.json())
 
+def test_delete_log_not_found():
+    resp = client.delete("/api/logs/9999")
+    assert resp.status_code == 404
+
 def test_goals_crud():
     get_resp = client.get("/api/goals")
     assert get_resp.status_code == 200
@@ -86,6 +90,14 @@ def test_adopt_action_and_remove():
     assert del_resp.status_code == 200
     get_actions2 = client.get("/api/actions")
     assert not any(a["action_key"] == tip_key for a in get_actions2.json())
+
+def test_adopt_action_not_found():
+    resp = client.post("/api/actions/invalid_key")
+    assert resp.status_code == 404
+
+def test_remove_adopted_action_not_found():
+    resp = client.delete("/api/actions/invalid_key")
+    assert resp.status_code == 404
 
 def test_summary_endpoint():
     resp = client.get("/api/summary")
