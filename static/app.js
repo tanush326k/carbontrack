@@ -132,7 +132,15 @@ window.addEventListener("DOMContentLoaded", () => {
     calculatorForm.addEventListener("submit", handleCalculate);
     document.getElementById("activity-logger-form").addEventListener("submit", handleAddLog);
     saveGoalsBtn.addEventListener("click", handleSaveGoals);
-    useAsBaselineBtn.addEventListener("click", handleUseCalculatorAsBaseline);
+    useAsBaselineBtn.addEventListener("click", () => handleUseCalculatorAsBaseline(false));
+
+    let calcTimeout;
+    const debouncedCalculate = () => {
+        clearTimeout(calcTimeout);
+        calcTimeout = setTimeout(() => {
+            handleCalculate(new Event('submit'));
+        }, 300);
+    };
 
     // Setup slider real-time value updates
     const sliders = document.querySelectorAll('.premium-slider');
@@ -140,7 +148,13 @@ window.addEventListener("DOMContentLoaded", () => {
         slider.addEventListener('input', (e) => {
             const valSpan = document.getElementById('val-' + e.target.id);
             if (valSpan) valSpan.textContent = e.target.value;
+            debouncedCalculate();
         });
+    });
+
+    const selects = calculatorForm.querySelectorAll('select');
+    selects.forEach(select => {
+        select.addEventListener('change', debouncedCalculate);
     });
 });
 
@@ -423,6 +437,7 @@ async function handleCalculate(e) {
         lastCalculatorTotal = results.total;
         
         renderCalcCharts(results);
+        await handleUseCalculatorAsBaseline(true);
     } catch (err) {
         alert("Could not compute carbon calculations: " + err.message);
     }
@@ -497,7 +512,7 @@ async function handleSaveGoals() {
 }
 
 // Set calculator total output as user baseline
-async function handleUseCalculatorAsBaseline() {
+async function handleUseCalculatorAsBaseline(silent = true) {
     if (lastCalculatorTotal <= 0) return;
     const currentTarget = parseFloat(targetGoalInput.value) || 400;
     const roundedBaseline = Math.round(lastCalculatorTotal);
@@ -511,9 +526,9 @@ async function handleUseCalculatorAsBaseline() {
         if (!res.ok) throw new Error("Could not update baseline");
         
         await fetchSummary();
-        alert(`Set baseline successfully to ${roundedBaseline} kg/month!`);
+        if (!silent) alert(`Set baseline successfully to ${roundedBaseline} kg/month!`);
     } catch (err) {
-        alert("Failed to apply baseline: " + err.message);
+        if (!silent) alert("Failed to apply baseline: " + err.message);
     }
 }
 
@@ -811,10 +826,20 @@ function init3DEarth() {
     renderer.setSize(w, h);
     container.appendChild(renderer.domElement);
     
+    const loadingEl = document.getElementById('earth-loading');
+    if(loadingEl) loadingEl.style.display = 'none';
+    
     const geometry = new THREE.SphereGeometry(2.5, 32, 32);
-    // Use a wireframe/basic material to avoid needing external texture loading
-    const material = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true });
+    // Use a standard material with lighting
+    const material = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, metalness: 0.2 });
     const earth = new THREE.Mesh(geometry, material);
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 3, 5);
+    scene.add(dirLight);
     
     scene.add(earth);
     camera.position.z = 7;

@@ -76,7 +76,7 @@
             <!-- Doughnut Chart showing contribution breakdown -->
             <div class="stat-card carbon-score-card">
     <h3>Carbon Score</h3>
-    <div class="score-value" id="carbon-score-value">0</div>
+    <div class="score-value" id="carbon-score-value" aria-live="polite">0</div>
     <div class="score-rating" id="carbon-score-rating">Rating</div>
     <div class="largest-category" id="carbon-score-category">Category: N/A</div>
     <ul class="score-suggestions" id="carbon-score-suggestions"></ul>
@@ -85,7 +85,7 @@
     <h3>Emissions Distribution</h3>
     <div class="progress-container-circle">
         <canvas id="emissions-doughnut" aria-label="Emissions Distribution Chart" role="img"></canvas>
-        <div class="progress-text-overlay">
+        <div class="progress-text-overlay" aria-live="polite">
             <span id="current-footprint-value">0.0</span>
             <span class="unit">kg CO2e</span>
         </div>
@@ -148,7 +148,11 @@
             </div>
             <div class="stat-card earth-card">
                 <h3>Interactive 3D Earth</h3>
-                <div id="earth-container"></div>
+                <div id="earth-container">
+                    <div id="earth-loading" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> &nbsp; Initializing Earth...
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -224,9 +228,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="action-btn glow-btn-hover">
-                        <i class="fa-solid fa-arrows-rotate"></i> Calculate Baseline
-                    </button>
+                    <!-- Auto-calculates via Javascript -->
                 </form>
 
                 <!-- Calculation breakdown results with ChartJS bar chart -->
@@ -235,7 +237,7 @@
                     <div class="chart-container-wrapper" id="calc-bar-chart">
                         <!-- Dynamic HTML bar chart will be appended here by app.js -->
                     </div>
-                    <button type="button" id="use-as-baseline-btn" class="secondary-btn">
+                    <button type="button" id="use-as-baseline-btn" class="secondary-btn" style="display:none;">
                         Set as Monthly Baseline
                     </button>
                 </div>
