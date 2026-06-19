@@ -139,9 +139,9 @@
                     <!-- Transport Section -->
                     <div class="form-section">
                         <h4><i class="fa-solid fa-car"></i> Transportation (Monthly)</h4>
-                        <div class="input-row">
-                            <label for="calc-car-km">Car Travel (km):</label>
-                            <input type="number" id="calc-car-km" placeholder="e.g. 800" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-car-km">Car Travel: <span id="val-calc-car-km" class="range-val-badge">0</span> km</label>
+                            <input type="range" id="calc-car-km" min="0" max="2000" value="0" class="premium-slider">
                         </div>
                         <div class="input-row">
                             <label for="calc-car-type">Fuel/Car Type:</label>
@@ -152,26 +152,26 @@
                                 <option value="electric_vehicle">Electric Vehicle</option>
                             </select>
                         </div>
-                        <div class="input-row">
-                            <label for="calc-public-km">Public Transport (km):</label>
-                            <input type="number" id="calc-public-km" placeholder="e.g. 150" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-public-km">Public Transport: <span id="val-calc-public-km" class="range-val-badge">0</span> km</label>
+                            <input type="range" id="calc-public-km" min="0" max="1000" value="0" class="premium-slider">
                         </div>
-                        <div class="input-row">
-                            <label for="calc-flights">Flight Travel (km):</label>
-                            <input type="number" id="calc-flights" placeholder="e.g. 500" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-flights">Flight Travel: <span id="val-calc-flights" class="range-val-badge">0</span> km</label>
+                            <input type="range" id="calc-flights" min="0" max="5000" value="0" class="premium-slider">
                         </div>
                     </div>
 
                     <!-- Energy Section -->
                     <div class="form-section">
                         <h4><i class="fa-solid fa-bolt"></i> Home Energy (Monthly)</h4>
-                        <div class="input-row">
-                            <label for="calc-elec">Electricity (kWh):</label>
-                            <input type="number" id="calc-elec" placeholder="e.g. 250" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-elec">Electricity: <span id="val-calc-elec" class="range-val-badge">0</span> kWh</label>
+                            <input type="range" id="calc-elec" min="0" max="1000" value="0" class="premium-slider">
                         </div>
-                        <div class="input-row">
-                            <label for="calc-gas">Natural Gas (kWh):</label>
-                            <input type="number" id="calc-gas" placeholder="e.g. 100" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-gas">Natural Gas: <span id="val-calc-gas" class="range-val-badge">0</span> kWh</label>
+                            <input type="range" id="calc-gas" min="0" max="500" value="0" class="premium-slider">
                         </div>
                     </div>
 
@@ -192,9 +192,9 @@
                     <!-- Waste Section -->
                     <div class="form-section">
                         <h4><i class="fa-solid fa-trash-can"></i> Household Waste (Weekly)</h4>
-                        <div class="input-row">
-                            <label for="calc-waste">Landfill Garbage (kg):</label>
-                            <input type="number" id="calc-waste" placeholder="e.g. 8" min="0">
+                        <div class="input-row range-row">
+                            <label for="calc-waste">Landfill Garbage: <span id="val-calc-waste" class="range-val-badge">0</span> kg</label>
+                            <input type="range" id="calc-waste" min="0" max="50" value="0" class="premium-slider">
                         </div>
                     </div>
 
@@ -241,9 +241,9 @@
                         </select>
                     </div>
 
-                    <div class="input-row">
-                        <label for="log-amount" id="log-amount-label">Distance (km):</label>
-                        <input type="number" id="log-amount" required min="0" step="any" placeholder="e.g. 45">
+                    <div class="input-row range-row">
+                        <label for="log-amount"><span id="log-amount-label">Distance (km):</span> <span id="val-log-amount" class="range-val-badge">0</span></label>
+                        <input type="range" id="log-amount" min="0" max="1000" value="0" class="premium-slider">
                     </div>
 
                     <div class="input-row">

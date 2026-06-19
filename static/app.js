@@ -111,6 +111,15 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("activity-logger-form").addEventListener("submit", handleAddLog);
     saveGoalsBtn.addEventListener("click", handleSaveGoals);
     useAsBaselineBtn.addEventListener("click", handleUseCalculatorAsBaseline);
+
+    // Setup slider real-time value updates
+    const sliders = document.querySelectorAll('.premium-slider');
+    sliders.forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const valSpan = document.getElementById('val-' + e.target.id);
+            if (valSpan) valSpan.textContent = e.target.value;
+        });
+    });
 });
 
 // Dynamic options update in logging form
@@ -129,8 +138,15 @@ function setupCategoryHandler() {
 
         // Update units label and placeholders
         logAmountLabel.textContent = UNIT_LABELS[cat] || "Amount:";
-        logAmountInput.placeholder = PLACEHOLDERS[cat] || "";
-        logAmountInput.value = "";
+        logAmountInput.value = "0";
+        const logValSpan = document.getElementById('val-log-amount');
+        if (logValSpan) logValSpan.textContent = "0";
+        
+        // Adjust max slider range based on category
+        if (cat === "food") { logAmountInput.max = "30"; }
+        else if (cat === "waste") { logAmountInput.max = "100"; }
+        else if (cat === "consumption") { logAmountInput.max = "10"; }
+        else { logAmountInput.max = "1000"; }
     };
 
     logCategorySelect.addEventListener("change", updateOptions);
