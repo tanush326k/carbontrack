@@ -171,9 +171,17 @@ body {
     font-size: 2rem;
     font-weight: 800;
     letter-spacing: -0.5px;
-    background: linear-gradient(135deg, #ffffff 50%, var(--mint) 100%);
+    background: linear-gradient(270deg, var(--mint), var(--blue), var(--purple), var(--mint));
+    background-size: 300% 300%;
+    animation: gradientShift 6s ease infinite;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .premium-badge {
@@ -322,6 +330,7 @@ body {
     flex-direction: column;
     align-items: center;
     position: relative;
+    animation: fadeInUp 0.8s ease-out forwards;
 }
 
 .stat-card h3 {
@@ -395,7 +404,12 @@ body {
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
 }
+.metric-box:nth-child(1) { animation-delay: 0.1s; }
+.metric-box:nth-child(2) { animation-delay: 0.2s; }
+.metric-box:nth-child(3) { animation-delay: 0.3s; }
 
 /* Neon Glow Triggers */
 .bg-glow-mint:hover {
@@ -484,6 +498,16 @@ body {
     flex-direction: column;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
     min-height: 640px;
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+}
+.grid-panel:nth-child(1) { animation-delay: 0.4s; }
+.grid-panel:nth-child(2) { animation-delay: 0.5s; }
+.grid-panel:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .panel-header {
