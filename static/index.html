@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrace - Premium Carbon Tracker & Insights</title>
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ChartJS for Premium Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="glow-bg glow-2"></div>
+    <div class="glow-bg glow-3"></div>
+
+    <!-- Alert / Toast Container for Level-Ups -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="main-header">
+            <div class="logo-area">
+                <div class="logo">
+                    <i class="fa-solid fa-earth-americas text-glow logo-pulse"></i>
+                    <h1>EcoTrace</h1>
+                    <span class="badge premium-badge">PREMIUM</span>
+                </div>
+                <div class="header-tagline">Track, Reduce, and Restore our Planet</div>
+            </div>
+
+            <!-- Gamification Profile Status -->
+            <div class="user-level-badge">
+                <div class="lvl-info">
+                    <span class="lvl-number">Level <span id="user-level-val">1</span></span>
+                    <span class="lvl-title" id="user-level-title">Eco Seedling</span>
+                </div>
+                <div class="xp-progress-area">
+                    <div class="xp-bar-container">
+                        <div class="xp-bar-fill" id="xp-bar-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="xp-text"><span id="user-xp-val">0</span>/100 XP</span>
+                </div>
+            </div>
+
+            <!-- Settings/Goals Area -->
+            <div class="user-goal-summary">
+                <div class="goal-input-inline">
+                    <span>Base:</span>
+                    <input type="number" id="base-goal-input" value="550" class="mini-input">
+                    <span>kg</span>
+                </div>
+                <div class="goal-input-inline">
+                    <span>Limit:</span>
+                    <input type="number" id="target-goal-input" value="400" class="mini-input">
+                    <span>kg</span>
+                </div>
+                <button id="save-goals-btn" class="icon-btn-save" title="Save Goals"><i class="fa-solid fa-circle-check"></i></button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD HERO PANEL -->
+        <section class="hero-stats">
+            <!-- Doughnut Chart showing contribution breakdown -->
+            <div class="stat-card carbon-score-card">
+    <h3>Carbon Score</h3>
+    <div class="score-value" id="carbon-score-value">0</div>
+    <div class="score-rating" id="carbon-score-rating">Rating</div>
+    <div class="largest-category" id="carbon-score-category">Category: N/A</div>
+    <ul class="score-suggestions" id="carbon-score-suggestions"></ul>
+</div>
+<div class="stat-card main-progress-card">
+    <h3>Emissions Distribution</h3>
+    <div class="progress-container-circle">
+        <canvas id="emissions-doughnut"></canvas>
+        <div class="progress-text-overlay">
+            <span id="current-footprint-value">0.0</span>
+            <span class="unit">kg CO2e</span>
+        </div>
+    </div>
+    <div class="progress-subtext">
+        <span id="progress-percentage-label">0% of target limit reached</span>
+    </div>
+</div>
+
+            </div>
+
+            <div class="quick-metrics">
+                <div class="metric-box bg-glow-mint">
+                    <div class="icon-wrapper bg-emerald">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Monthly Savings</span>
+                        <span class="metric-val" id="metric-savings">0.0 kg</span>
+                        <span class="metric-sub">From adopted actions</span>
+                    </div>
+                </div>
+
+                <div class="metric-box bg-glow-blue">
+                    <div class="icon-wrapper bg-blue">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Logged Emissions</span>
+                        <span class="metric-val" id="metric-logged">0.0 kg</span>
+                        <span class="metric-sub"><span id="metric-log-count">0</span> entries logged</span>
+                    </div>
+                </div>
+
+                <div class="metric-box bg-glow-purple">
+                    <div class="icon-wrapper bg-purple">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Target Footprint</span>
+                        <span class="metric-val" id="metric-target">400.0 kg</span>
+                        <span class="metric-sub">Monthly reduction limit</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN LAYOUT -->
+        <main class="dashboard-grid">
+            <!-- COLUMN 1: CALCULATOR & ANALYTICS -->
+            <section class="grid-panel calc-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-calculator text-mint"></i> Carbon Calculator</h2>
+                    <span class="panel-desc">Estimate your current monthly baseline</span>
+                </div>
+                
+                <form id="calculator-form" class="panel-body">
+                    <!-- Transport Section -->
+                    <div class="form-section">
+                        <h4><i class="fa-solid fa-car"></i> Transportation (Monthly)</h4>
+                        <div class="input-row">
+                            <label for="calc-car-km">Car Travel (km):</label>
+                            <input type="number" id="calc-car-km" placeholder="e.g. 800" min="0">
+                        </div>
+                        <div class="input-row">
+                            <label for="calc-car-type">Fuel/Car Type:</label>
+                            <select id="calc-car-type">
+                                <option value="petrol_car">Petrol Car</option>
+                                <option value="diesel_car">Diesel Car</option>
+                                <option value="hybrid_car">Hybrid Car</option>
+                                <option value="electric_vehicle">Electric Vehicle</option>
+                            </select>
+                        </div>
+                        <div class="input-row">
+                            <label for="calc-public-km">Public Transport (km):</label>
+                            <input type="number" id="calc-public-km" placeholder="e.g. 150" min="0">
+                        </div>
+                        <div class="input-row">
+                            <label for="calc-flights">Flight Travel (km):</label>
+                            <input type="number" id="calc-flights" placeholder="e.g. 500" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Energy Section -->
+                    <div class="form-section">
+                        <h4><i class="fa-solid fa-bolt"></i> Home Energy (Monthly)</h4>
+                        <div class="input-row">
+                            <label for="calc-elec">Electricity (kWh):</label>
+                            <input type="number" id="calc-elec" placeholder="e.g. 250" min="0">
+                        </div>
+                        <div class="input-row">
+                            <label for="calc-gas">Natural Gas (kWh):</label>
+                            <input type="number" id="calc-gas" placeholder="e.g. 100" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Diet Section -->
+                    <div class="form-section">
+                        <h4><i class="fa-solid fa-utensils"></i> Primary Diet</h4>
+                        <div class="input-row">
+                            <label for="calc-diet">Dietary Pattern:</label>
+                            <select id="calc-diet">
+                                <option value="heavy_meat">Heavy Meat-eater</option>
+                                <option value="average_mixed" selected>Average Mixed Diet</option>
+                                <option value="vegetarian">Vegetarian</option>
+                                <option value="vegan">Vegan</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Waste Section -->
+                    <div class="form-section">
+                        <h4><i class="fa-solid fa-trash-can"></i> Household Waste (Weekly)</h4>
+                        <div class="input-row">
+                            <label for="calc-waste">Landfill Garbage (kg):</label>
+                            <input type="number" id="calc-waste" placeholder="e.g. 8" min="0">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="action-btn glow-btn-hover">
+                        <i class="fa-solid fa-arrows-rotate"></i> Calculate Baseline
+                    </button>
+                </form>
+
+                <!-- Calculation breakdown results with ChartJS bar chart -->
+                <div id="calc-breakdown" class="calc-results-view hidden">
+                    <h4 class="results-title">Calculated Monthly Breakdown:</h4>
+                    <div class="chart-container-wrapper">
+                        <canvas id="calc-bar-chart-canvas"></canvas>
+                    </div>
+                    <button type="button" id="use-as-baseline-btn" class="secondary-btn">
+                        Set as Monthly Baseline
+                    </button>
+                </div>
+            </section>
+
+            <!-- COLUMN 2: DAILY ACTIVITY LOGGER & HISTORICAL LOGS -->
+            <section class="grid-panel logger-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-square-plus text-blue"></i> Daily Activity Logger</h2>
+                    <span class="panel-desc">Log your day-to-day emissions (+XP awarded)</span>
+                </div>
+                
+                <form id="activity-logger-form" class="panel-body">
+                    <div class="input-row">
+                        <label for="log-category">Category:</label>
+                        <select id="log-category">
+                            <option value="transport">Transportation</option>
+                            <option value="energy">Utilities / Home Energy</option>
+                            <option value="food">Diet / Meal choice</option>
+                            <option value="waste">Waste Disposed</option>
+                            <option value="consumption">Shopping / Purchases</option>
+                        </select>
+                    </div>
+
+                    <div class="input-row">
+                        <label for="log-type">Activity Type:</label>
+                        <select id="log-type">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="input-row">
+                        <label for="log-amount" id="log-amount-label">Distance (km):</label>
+                        <input type="number" id="log-amount" required min="0" step="any" placeholder="e.g. 45">
+                    </div>
+
+                    <div class="input-row">
+                        <label for="log-notes">Notes (optional):</label>
+                        <input type="text" id="log-notes" placeholder="Commute, veggie lunch...">
+                    </div>
+
+                    <button type="submit" class="action-btn bg-blue-btn glow-btn-hover">
+                        <i class="fa-solid fa-plus"></i> Add Log Entry
+                    </button>
+                </form>
+
+                <!-- History list of logs -->
+                <div class="activity-history-container">
+                    <div class="history-header">
+                        <h3>Recent Logged Activity</h3>
+                        <span class="xp-hint"><i class="fa-solid fa-sparkles"></i> Log to earn up to +20 XP</span>
+                    </div>
+                    <div class="logs-list-scroll" id="recent-logs-list">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 3: REDUCTION GUIDE, BADGES, AND CHALLENGES -->
+            <section class="grid-panel guide-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-award text-yellow"></i> Action Guide & Gamification</h2>
+                    <span class="panel-desc">Commit to habits, unlock badges, check challenges</span>
+                </div>
+                
+                <div class="panel-body flex-col gap-lg scroll-y">
+                    <!-- Achievements Badges Container -->
+                    <div class="badges-shelf-container">
+                        <div class="shelf-header">
+                            <h3>Eco Badge Closet</h3>
+                            <span class="badge-count" id="badge-count-label">0 Unlocked</span>
+                        </div>
+                        <div class="badges-grid" id="badges-shelf">
+                            <!-- Badges dynamically added here -->
+                        </div>
+                    </div>
+
+                    <!-- Weekly Challenges -->
+                    <div class="challenges-section">
+                        <h3>Weekly Challenge Desk</h3>
+                        <div class="challenges-deck">
+                            <div class="challenge-card" id="challenge-commute">
+                                <div class="challenge-icon"><i class="fa-solid fa-bus"></i></div>
+                                <div class="challenge-body">
+                                    <span class="challenge-title">Commute Crusader</span>
+                                    <span class="challenge-desc">Log 3 low-emission commutes.</span>
+                                    <div class="challenge-progress-bar">
+                                        <div class="challenge-progress-fill" id="challenge-commute-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-card" id="challenge-habits">
+                                <div class="challenge-icon"><i class="fa-solid fa-leaf"></i></div>
+                                <div class="challenge-body">
+                                    <span class="challenge-title">Green Lifestyle</span>
+                                    <span class="challenge-desc">Commit to 3 active habits at once.</span>
+                                    <div class="challenge-progress-bar">
+                                        <div class="challenge-progress-fill" id="challenge-habits-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Commited Actions List -->
+                    <div class="adopted-section">
+                        <h3>Your Adopted Habits</h3>
+                        <div class="adopted-habits-list" id="adopted-habits-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recommended Actions List -->
+                    <div class="tips-section">
+                        <h3>Recommended Action Plans</h3>
+                        <div class="tips-deck" id="recommended-tips-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>&copy; 2026 EcoTrace Carbon Platform. Premium Version. Deployable on Google Cloud Run.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
