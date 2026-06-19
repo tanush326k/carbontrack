@@ -258,18 +258,22 @@ function updateUIElements() {
     const pct = Math.min(appSummary.current_estimate / appSummary.target, 1.5); // cap representation at 150% visual
     const offset = circumference - (pct * circumference);
     
-    progressCircleBar.style.strokeDasharray = `${circumference} ${circumference}`;
-    progressCircleBar.style.strokeDashoffset = isNaN(offset) ? circumference : offset;
-    
-    // Color circle bar if over limit
-    if (appSummary.current_estimate > appSummary.target) {
-        progressCircleBar.style.stroke = "var(--red)";
-    } else {
-        progressCircleBar.style.stroke = "var(--mint)";
+    if (progressCircleBar) {
+        progressCircleBar.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressCircleBar.style.strokeDashoffset = isNaN(offset) ? circumference : offset;
+        
+        // Color circle bar if over limit
+        if (appSummary.current_estimate > appSummary.target) {
+            progressCircleBar.style.stroke = "var(--red)";
+        } else {
+            progressCircleBar.style.stroke = "var(--mint)";
+        }
     }
     
     const pctLabelVal = Math.round(pct * 100);
-    progressPercentageLabel.textContent = `${pctLabelVal}% of monthly target reached`;
+    if (progressPercentageLabel) {
+        progressPercentageLabel.textContent = `${pctLabelVal}% of monthly target reached`;
+    }
     
     // XP & Level UI updates
     if (xpBarFill && userXpVal && userLevelVal) {
@@ -799,10 +803,12 @@ function init3DEarth() {
     if(!container) return;
     
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const w = container.clientWidth || 300;
+    const h = container.clientHeight || 180;
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(w, h);
     container.appendChild(renderer.domElement);
     
     const geometry = new THREE.SphereGeometry(2.5, 32, 32);
@@ -821,9 +827,11 @@ function init3DEarth() {
     animate();
     
     window.addEventListener('resize', () => {
-        camera.aspect = container.clientWidth / container.clientHeight;
+        const rw = container.clientWidth || 300;
+        const rh = container.clientHeight || 180;
+        camera.aspect = rw / rh;
         camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(rw, rh);
     });
 }
 
