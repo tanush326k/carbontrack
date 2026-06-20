@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoTrace - Premium Carbon Tracker & Insights</title>
-    <link rel="manifest" href="/manifest.json">
+    <script>
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+</script>
     <meta name="theme-color" content="#10b981">
     <meta name="description" content="Premium AI-powered sustainability platform">
     <!-- Modern Typography -->
@@ -19,30 +22,33 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Accessibility Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to Main Content</a>
+
     <div class="glow-bg"></div>
     <div class="glow-bg glow-2"></div>
     <div class="glow-bg glow-3"></div>
 
     <!-- Alert / Toast Container for Level-Ups -->
-    <div id="toast-container" class="toast-container"></div>
+    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
     
     <div class="app-container">
         <!-- HEADER -->
         <header class="main-header">
             <div class="logo-area">
                 <div class="logo">
-                    <i class="fa-solid fa-earth-americas text-glow logo-pulse"></i>
+                    <i class="fa-solid fa-earth-americas text-glow logo-pulse" aria-hidden="true"></i>
                     <h1>EcoTrace</h1>
                     <span class="badge premium-badge">PREMIUM</span>
                     <button id="theme-toggle" class="icon-btn" aria-label="Toggle Dark/Light Mode">
-                        <i class="fa-solid fa-moon"></i>
+                        <i class="fa-solid fa-moon" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="header-tagline">Track, Reduce, and Restore our Planet</div>
             </div>
 
             <!-- Gamification Profile Status -->
-            <div class="user-level-badge">
+            <div class="user-level-badge" role="region" aria-label="User Level and XP status">
                 <div class="lvl-info">
                     <span class="lvl-number">Level <span id="user-level-val">1</span></span>
                     <span class="lvl-title" id="user-level-title">Eco Seedling</span>
@@ -56,77 +62,76 @@
             </div>
 
             <!-- Settings/Goals Area -->
-            <div class="user-goal-summary">
+            <div class="user-goal-summary" role="form" aria-label="Baseline and reduction target limits settings">
                 <div class="goal-input-inline">
-                    <span>Base:</span>
-                    <input type="number" id="base-goal-input" value="550" class="mini-input">
+                    <label for="base-goal-input">Base:</label>
+                    <input type="number" id="base-goal-input" value="550" class="mini-input" aria-label="Monthly Baseline Footprint (kg CO2e)">
                     <span>kg</span>
                 </div>
                 <div class="goal-input-inline">
-                    <span>Limit:</span>
-                    <input type="number" id="target-goal-input" value="400" class="mini-input">
+                    <label for="target-goal-input">Limit:</label>
+                    <input type="number" id="target-goal-input" value="400" class="mini-input" aria-label="Monthly Target Footprint Limit (kg CO2e)">
                     <span>kg</span>
                 </div>
-                <button id="save-goals-btn" class="icon-btn-save" title="Save Goals" aria-label="Save Goals"><i class="fa-solid fa-circle-check"></i></button>
+                <button id="save-goals-btn" class="icon-btn-save" title="Save Goals" aria-label="Save Goals"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></button>
             </div>
         </header>
 
         <!-- DASHBOARD HERO PANEL -->
-        <section class="hero-stats">
+        <section class="hero-stats" aria-label="Dashboard Overview Metrics">
             <!-- Doughnut Chart showing contribution breakdown -->
-            <div class="stat-card carbon-score-card">
-    <h3>Carbon Score</h3>
-    <div class="score-value" id="carbon-score-value" aria-live="polite">0</div>
-    <div class="score-rating" id="carbon-score-rating">Rating</div>
-    <div class="largest-category" id="carbon-score-category">Category: N/A</div>
-    <ul class="score-suggestions" id="carbon-score-suggestions"></ul>
-</div>
-<div class="stat-card main-progress-card">
-    <h3>Emissions Distribution</h3>
-    <div class="progress-container-circle">
-        <canvas id="emissions-doughnut" aria-label="Emissions Distribution Chart" role="img"></canvas>
-        <div class="progress-text-overlay" aria-live="polite">
-            <span id="current-footprint-value">0.0</span>
-            <span class="unit">kg CO2e</span>
-        </div>
-    </div>
-    <div class="progress-subtext">
-        <span id="progress-percentage-label">0% of target limit reached</span>
-    </div>
-</div>
-
+            <div class="stat-card carbon-score-card" role="region" aria-label="Carbon Score Analytics">
+                <h3>Carbon Score</h3>
+                <div class="score-value" id="carbon-score-value" aria-live="polite">0</div>
+                <div class="score-rating" id="carbon-score-rating" tabindex="0">Rating</div>
+                <div class="largest-category" id="carbon-score-category">Category: N/A</div>
+                <ul class="score-suggestions" id="carbon-score-suggestions" aria-label="Personalized Reduction Recommendations"></ul>
+            </div>
+            
+            <div class="stat-card main-progress-card" role="region" aria-label="Current emissions vs target progress">
+                <h3>Emissions Distribution</h3>
+                <div class="progress-container-circle">
+                    <canvas id="emissions-doughnut" aria-label="Emissions distribution graph breaking down transportation, energy, diet, waste, and shopping categories" role="img"></canvas>
+                    <div class="progress-text-overlay" aria-live="polite">
+                        <span id="current-footprint-value">0.0</span>
+                        <span class="unit">kg CO2e</span>
+                    </div>
+                </div>
+                <div class="progress-subtext" aria-live="polite">
+                    <span id="progress-percentage-label">0% of target limit reached</span>
+                </div>
             </div>
 
-            <div class="quick-metrics">
+            <div class="quick-metrics" aria-label="Key sustainability stats summary">
                 <div class="metric-box bg-glow-mint">
                     <div class="icon-wrapper bg-emerald">
-                        <i class="fa-solid fa-gift"></i>
+                        <i class="fa-solid fa-gift" aria-hidden="true"></i>
                     </div>
                     <div class="metric-info">
                         <span class="metric-label">Monthly Savings</span>
-                        <span class="metric-val" id="metric-savings">0.0 kg</span>
+                        <span class="metric-val" id="metric-savings" aria-live="polite">0.0 kg</span>
                         <span class="metric-sub">From adopted actions</span>
                     </div>
                 </div>
 
                 <div class="metric-box bg-glow-blue">
                     <div class="icon-wrapper bg-blue">
-                        <i class="fa-solid fa-chart-line"></i>
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
                     </div>
                     <div class="metric-info">
                         <span class="metric-label">Logged Emissions</span>
-                        <span class="metric-val" id="metric-logged">0.0 kg</span>
-                        <span class="metric-sub"><span id="metric-log-count">0</span> entries logged</span>
+                        <span class="metric-val" id="metric-logged" aria-live="polite">0.0 kg</span>
+                        <span class="metric-sub"><span id="metric-log-count" aria-live="polite">0</span> entries logged</span>
                     </div>
                 </div>
 
                 <div class="metric-box bg-glow-purple">
                     <div class="icon-wrapper bg-purple">
-                        <i class="fa-solid fa-trophy"></i>
+                        <i class="fa-solid fa-trophy" aria-hidden="true"></i>
                     </div>
                     <div class="metric-info">
                         <span class="metric-label">Target Footprint</span>
-                        <span class="metric-val" id="metric-target">400.0 kg</span>
+                        <span class="metric-val" id="metric-target" aria-live="polite">400.0 kg</span>
                         <span class="metric-sub">Monthly reduction limit</span>
                     </div>
                 </div>
@@ -134,41 +139,41 @@
         </section>
         
         <!-- NEW PREMIUM FEATURES (AI, Simulator, Leaderboard, Earth) -->
-        <section class="premium-features-row">
-            <div class="stat-card ai-coach-card">
-                <h3><i class="fa-solid fa-robot text-purple"></i> AI Sustainability Coach</h3>
-                <div id="ai-coach-insight" class="ai-insight">Analyzing your habits...</div>
+        <section class="premium-features-row" aria-label="Premium coach and visualization features">
+            <div class="stat-card ai-coach-card" role="region" aria-label="AI Coach recommendations">
+                <h3><i class="fa-solid fa-robot text-purple" aria-hidden="true"></i> AI Sustainability Coach</h3>
+                <div id="ai-coach-insight" class="ai-insight" aria-live="polite">Analyzing your habits...</div>
             </div>
-            <div class="stat-card community-card">
-                <h3><i class="fa-solid fa-globe text-blue"></i> Global Community Impact</h3>
-                <div class="community-stats">
-                    <div><i class="fa-solid fa-tree text-mint"></i> <span id="comm-trees">0</span> Trees Saved</div>
-                    <div><i class="fa-solid fa-car-burst text-red"></i> <span id="comm-cars">0</span> Cars Removed</div>
+            <div class="stat-card community-card" role="region" aria-label="Community stats">
+                <h3><i class="fa-solid fa-globe text-blue" aria-hidden="true"></i> Global Community Impact</h3>
+                <div class="community-stats" aria-live="polite">
+                    <div><i class="fa-solid fa-tree text-mint" aria-hidden="true"></i> <span id="comm-trees">0</span> Trees Saved</div>
+                    <div><i class="fa-solid fa-car-burst text-red" aria-hidden="true"></i> <span id="comm-cars">0</span> Cars Removed</div>
                 </div>
             </div>
-            <div class="stat-card earth-card">
+            <div class="stat-card earth-card" role="region" aria-label="Interactive visual elements">
                 <h3>Interactive 3D Earth</h3>
-                <div id="earth-container">
+                <div id="earth-container" aria-label="3D globe rotating model representing environmental awareness">
                     <div id="earth-loading" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
-                        <i class="fa-solid fa-circle-notch fa-spin"></i> &nbsp; Initializing Earth...
+                        <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> &nbsp; Initializing Earth...
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- MAIN LAYOUT -->
-        <main class="dashboard-grid">
+        <main class="dashboard-grid" id="main-content" tabindex="-1">
             <!-- COLUMN 1: CALCULATOR & ANALYTICS -->
-            <section class="grid-panel calc-panel">
+            <section class="grid-panel calc-panel" aria-labelledby="calculator-heading">
                 <div class="panel-header">
-                    <h2><i class="fa-solid fa-calculator text-mint"></i> Carbon Calculator</h2>
+                    <h2 id="calculator-heading"><i class="fa-solid fa-calculator text-mint" aria-hidden="true"></i> Carbon Calculator</h2>
                     <span class="panel-desc">Estimate your current monthly baseline</span>
                 </div>
                 
                 <form id="calculator-form" class="panel-body">
                     <!-- Transport Section -->
                     <div class="form-section">
-                        <h4><i class="fa-solid fa-car"></i> Transportation (Monthly)</h4>
+                        <h4><i class="fa-solid fa-car" aria-hidden="true"></i> Transportation (Monthly)</h4>
                         <div class="input-row range-row">
                             <label for="calc-car-km">Car Travel: <span id="val-calc-car-km" class="range-val-badge">0</span> km</label>
                             <input type="range" id="calc-car-km" min="0" max="2000" value="0" class="premium-slider">
@@ -194,7 +199,7 @@
 
                     <!-- Energy Section -->
                     <div class="form-section">
-                        <h4><i class="fa-solid fa-bolt"></i> Home Energy (Monthly)</h4>
+                        <h4><i class="fa-solid fa-bolt" aria-hidden="true"></i> Home Energy (Monthly)</h4>
                         <div class="input-row range-row">
                             <label for="calc-elec">Electricity: <span id="val-calc-elec" class="range-val-badge">0</span> kWh</label>
                             <input type="range" id="calc-elec" min="0" max="1000" value="0" class="premium-slider">
@@ -207,7 +212,7 @@
 
                     <!-- Diet Section -->
                     <div class="form-section">
-                        <h4><i class="fa-solid fa-utensils"></i> Primary Diet</h4>
+                        <h4><i class="fa-solid fa-utensils" aria-hidden="true"></i> Primary Diet</h4>
                         <div class="input-row">
                             <label for="calc-diet">Dietary Pattern:</label>
                             <select id="calc-diet">
@@ -221,7 +226,7 @@
 
                     <!-- Waste Section -->
                     <div class="form-section">
-                        <h4><i class="fa-solid fa-trash-can"></i> Household Waste (Weekly)</h4>
+                        <h4><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Household Waste (Weekly)</h4>
                         <div class="input-row range-row">
                             <label for="calc-waste">Landfill Garbage: <span id="val-calc-waste" class="range-val-badge">0</span> kg</label>
                             <input type="range" id="calc-waste" min="0" max="50" value="0" class="premium-slider">
@@ -232,7 +237,7 @@
                 </form>
 
                 <!-- Calculation breakdown results with ChartJS bar chart -->
-                <div id="calc-breakdown" class="calc-results-view hidden">
+                <div id="calc-breakdown" class="calc-results-view hidden" aria-live="polite">
                     <h4 class="results-title">Calculated Monthly Breakdown:</h4>
                     <div class="chart-container-wrapper" id="calc-bar-chart">
                         <!-- Dynamic HTML bar chart will be appended here by app.js -->
@@ -244,9 +249,9 @@
             </section>
 
             <!-- COLUMN 2: DAILY ACTIVITY LOGGER & HISTORICAL LOGS -->
-            <section class="grid-panel logger-panel">
+            <section class="grid-panel logger-panel" aria-labelledby="logger-heading">
                 <div class="panel-header">
-                    <h2><i class="fa-solid fa-square-plus text-blue"></i> Daily Activity Logger</h2>
+                    <h2 id="logger-heading"><i class="fa-solid fa-square-plus text-blue" aria-hidden="true"></i> Daily Activity Logger</h2>
                     <span class="panel-desc">Log your day-to-day emissions (+XP awarded)</span>
                 </div>
                 
@@ -280,15 +285,15 @@
                     </div>
 
                     <button type="submit" class="action-btn bg-blue-btn glow-btn-hover">
-                        <i class="fa-solid fa-plus"></i> Add Log Entry
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Log Entry
                     </button>
                 </form>
 
                 <!-- History list of logs -->
-                <div class="activity-history-container">
+                <div class="activity-history-container" aria-live="polite">
                     <div class="history-header">
                         <h3>Recent Logged Activity</h3>
-                        <span class="xp-hint"><i class="fa-solid fa-sparkles"></i> Log to earn up to +20 XP</span>
+                        <span class="xp-hint"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> Log to earn up to +20 XP</span>
                     </div>
                     <div class="logs-list-scroll" id="recent-logs-list">
                         <!-- Injected by JS -->
@@ -297,9 +302,9 @@
             </section>
 
             <!-- COLUMN 3: REDUCTION GUIDE, BADGES, AND CHALLENGES -->
-            <section class="grid-panel guide-panel">
+            <section class="grid-panel guide-panel" aria-labelledby="guide-heading">
                 <div class="panel-header">
-                    <h2><i class="fa-solid fa-award text-yellow"></i> Action Guide & Gamification</h2>
+                    <h2 id="guide-heading"><i class="fa-solid fa-award text-yellow" aria-hidden="true"></i> Action Guide & Gamification</h2>
                     <span class="panel-desc">Commit to habits, unlock badges, check challenges</span>
                 </div>
                 
@@ -310,17 +315,17 @@
                             <h3>Eco Badge Closet</h3>
                             <span class="badge-count" id="badge-count-label">0 Unlocked</span>
                         </div>
-                        <div class="badges-grid" id="badges-shelf">
+                        <div class="badges-grid" id="badges-shelf" role="group" aria-label="Achievements shelf">
                             <!-- Badges dynamically added here -->
                         </div>
                     </div>
 
                     <!-- Weekly Challenges -->
-                    <div class="challenges-section">
+                    <div class="challenges-section" role="region" aria-label="Current weekly challenges">
                         <h3>Weekly Challenge Desk</h3>
                         <div class="challenges-deck">
                             <div class="challenge-card" id="challenge-commute">
-                                <div class="challenge-icon"><i class="fa-solid fa-bus"></i></div>
+                                <div class="challenge-icon"><i class="fa-solid fa-bus" aria-hidden="true"></i></div>
                                 <div class="challenge-body">
                                     <span class="challenge-title">Commute Crusader</span>
                                     <span class="challenge-desc">Log 3 low-emission commutes.</span>
@@ -330,7 +335,7 @@
                                 </div>
                             </div>
                             <div class="challenge-card" id="challenge-habits">
-                                <div class="challenge-icon"><i class="fa-solid fa-leaf"></i></div>
+                                <div class="challenge-icon"><i class="fa-solid fa-leaf" aria-hidden="true"></i></div>
                                 <div class="challenge-body">
                                     <span class="challenge-title">Green Lifestyle</span>
                                     <span class="challenge-desc">Commit to 3 active habits at once.</span>
@@ -343,7 +348,7 @@
                     </div>
 
                     <!-- Commited Actions List -->
-                    <div class="adopted-section">
+                    <div class="adopted-section" aria-live="polite">
                         <h3>Your Adopted Habits</h3>
                         <div class="adopted-habits-list" id="adopted-habits-list">
                             <!-- Injected by JS -->
@@ -351,7 +356,7 @@
                     </div>
 
                     <!-- Recommended Actions List -->
-                    <div class="tips-section">
+                    <div class="tips-section" aria-live="polite">
                         <h3>Recommended Action Plans</h3>
                         <div class="tips-deck" id="recommended-tips-list">
                             <!-- Injected by JS -->
@@ -367,6 +372,8 @@
         </footer>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Script loaded as an ES Module -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
+

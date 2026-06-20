@@ -59,3 +59,14 @@ class UnlockedAchievementSchema(BaseModel):
     description: str
     date: str
 
+class AdoptedActionResponse(BaseModel):
+    id: int
+    action_key: str
+    title: str
+    monthly_saving_kg: float
+
+    model_config = {
+        "from_attributes": True
+    }
+
+

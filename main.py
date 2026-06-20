@@ -2,10 +2,17 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List, Dict, Any, Generator
 import os
+import logging
+
+# Centralized Logging Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("carbon-tracker")
 
 import models
 import schemas
@@ -29,7 +36,7 @@ app.add_middleware(
 )
 
 class SecurityMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         response = await call_next(request)
         response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self';"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -41,7 +48,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityMiddleware)
 
 # DB Dependency
-def get_db():
+def get_db() -> Generator[Session, None, None]:
     """Yield a database session."""
     db = models.SessionLocal()
     try:
@@ -50,7 +57,12 @@ def get_db():
         db.close()
 
 # Helper function to check and unlock achievements dynamically
-def check_and_unlock_achievements(db: Session, goal: models.DBUserGoal, all_logs: List[models.DBActivityLog], adopted_actions: List[models.DBAdoptedAction]):
+def check_and_unlock_achievements(
+    db: Session,
+    goal: models.DBUserGoal,
+    all_logs: List[models.DBActivityLog],
+    adopted_actions: List[models.DBAdoptedAction]
+) -> None:
     """Check for new achievements and unlock them based on user activity."""
     achievements_to_unlock = []
 
@@ -100,6 +112,7 @@ def check_and_unlock_achievements(db: Session, goal: models.DBUserGoal, all_logs
             # Award 100 bonus XP for unlocking an achievement!
             goal.xp += 100
             unlocked_any = True
+            logger.info(f"Achievement unlocked: {ach['title']} (+100 XP)")
 
     if unlocked_any:
         goal.level = 1 + goal.xp // 100
@@ -107,7 +120,7 @@ def check_and_unlock_achievements(db: Session, goal: models.DBUserGoal, all_logs
         db.commit()
 
 # In-memory recommendation catalog
-TIPS_CATALOG = [
+TIPS_CATALOG: List[Dict[str, Any]] = [
     {
         "key": "meatless_days",
         "title": "Meatless Days",
@@ -167,25 +180,27 @@ TIPS_CATALOG = [
 ]
 
 @app.get("/api/health")
-def health_check():
+def health_check() -> Dict[str, str]:
     """Health check endpoint to verify service status."""
     return {"status": "healthy", "service": "carbon-tracker"}
 
+
 # Calculation Endpoint
 @app.post("/api/calculate", response_model=schemas.CalculationResult)
-def calculate_footprint(inputs: schemas.CarbonCalculatorInputs):
+def calculate_footprint(inputs: schemas.CarbonCalculatorInputs) -> schemas.CalculationResult:
     """Calculate the estimated monthly carbon footprint."""
     try:
         raw_dict = inputs.model_dump()
         result = calculations.calculate_total_monthly_footprint(raw_dict)
-        return result
+        return schemas.CalculationResult(**result)
     except Exception as e:
+        logger.error(f"Error calculating footprint: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 # Activity Logs Endpoints
 
 @app.post("/api/logs", response_model=schemas.DailyActivityResponse)
-def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)):
+def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)) -> schemas.DailyActivityResponse:
     """Log a new daily activity and calculate its emissions."""
     # Calculate emissions for this specific entry
     emissions = 0.0
@@ -208,6 +223,7 @@ def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)):
         else:
             raise ValueError(f"Unknown category: {cat}")
     except Exception as e:
+        logger.error(f"Calculation error for log entry: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Calculation error: {str(e)}")
 
     db_log = models.DBActivityLog(
@@ -251,7 +267,7 @@ def create_log(log_in: schemas.DailyActivityLog, db: Session = Depends(get_db)):
     )
 
 @app.get("/api/logs", response_model=List[schemas.DailyActivityResponse])
-def get_logs(db: Session = Depends(get_db)):
+def get_logs(db: Session = Depends(get_db)) -> List[schemas.DailyActivityResponse]:
     """Retrieve all activity logs ordered by date."""
     logs = db.query(models.DBActivityLog).order_by(models.DBActivityLog.date.desc()).all()
     res = []
@@ -268,7 +284,7 @@ def get_logs(db: Session = Depends(get_db)):
     return res
 
 @app.delete("/api/logs/{log_id}")
-def delete_log(log_id: int, db: Session = Depends(get_db)):
+def delete_log(log_id: int, db: Session = Depends(get_db)) -> Dict[str, str]:
     """Delete a specific activity log."""
     db_log = db.query(models.DBActivityLog).filter(models.DBActivityLog.id == log_id).first()
     if not db_log:
@@ -279,7 +295,7 @@ def delete_log(log_id: int, db: Session = Depends(get_db)):
 
 # Goals Endpoints
 @app.get("/api/goals", response_model=schemas.UserGoal)
-def get_goals(db: Session = Depends(get_db)):
+def get_goals(db: Session = Depends(get_db)) -> schemas.UserGoal:
     """Retrieve the user's current baseline and target goals."""
     goal = db.query(models.DBUserGoal).first()
     if not goal:
@@ -290,7 +306,7 @@ def get_goals(db: Session = Depends(get_db)):
     return schemas.UserGoal(baseline=goal.baseline, target=goal.target, xp=goal.xp, level=goal.level)
 
 @app.post("/api/goals", response_model=schemas.UserGoal)
-def update_goals(goal_in: schemas.UserGoal, db: Session = Depends(get_db)):
+def update_goals(goal_in: schemas.UserGoal, db: Session = Depends(get_db)) -> schemas.UserGoal:
     """Update the user's baseline and target goals."""
     goal = db.query(models.DBUserGoal).first()
     if not goal:
@@ -305,18 +321,18 @@ def update_goals(goal_in: schemas.UserGoal, db: Session = Depends(get_db)):
 
 # Recommendation Tips & Adopted Actions Endpoints
 @app.get("/api/tips")
-def get_tips():
+def get_tips() -> List[Dict[str, Any]]:
     """Retrieve the catalog of all available recommendation tips."""
     return TIPS_CATALOG
 
-@app.get("/api/actions")
-def get_adopted_actions(db: Session = Depends(get_db)):
+@app.get("/api/actions", response_model=List[schemas.AdoptedActionResponse])
+def get_adopted_actions(db: Session = Depends(get_db)) -> List[models.DBAdoptedAction]:
     """Retrieve the list of actions currently adopted by the user."""
     actions = db.query(models.DBAdoptedAction).all()
     return actions
 
-@app.post("/api/actions/{action_key}")
-def adopt_action(action_key: str, db: Session = Depends(get_db)):
+@app.post("/api/actions/{action_key}", response_model=schemas.AdoptedActionResponse)
+def adopt_action(action_key: str, db: Session = Depends(get_db)) -> models.DBAdoptedAction:
     """Adopt a new action/tip by its key."""
     # Find action details in our static list
     matched = next((t for t in TIPS_CATALOG if t["key"] == action_key), None)
@@ -346,8 +362,9 @@ def adopt_action(action_key: str, db: Session = Depends(get_db)):
     db.refresh(db_action)
     return db_action
 
+
 @app.delete("/api/actions/{action_key}")
-def remove_adopted_action(action_key: str, db: Session = Depends(get_db)):
+def remove_adopted_action(action_key: str, db: Session = Depends(get_db)) -> Dict[str, str]:
     """Remove an adopted action."""
     db_action = db.query(models.DBAdoptedAction).filter(models.DBAdoptedAction.action_key == action_key).first()
     if not db_action:
@@ -356,9 +373,10 @@ def remove_adopted_action(action_key: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": f"Successfully removed adopted action: {action_key}"}
 
+
 # Dashboard Analytics Summary
 @app.get("/api/summary")
-def get_analytics_summary(db: Session = Depends(get_db)):
+def get_analytics_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
     """Generate a summary of analytics including scores, tips, and achievements."""
     # Get current goals
     goal = db.query(models.DBUserGoal).first()
@@ -426,13 +444,13 @@ def get_analytics_summary(db: Session = Depends(get_db)):
 
 # Mock AI Coach
 @app.get("/api/coach")
-def get_ai_coach(db: Session = Depends(get_db)):
+def get_ai_coach(db: Session = Depends(get_db)) -> Dict[str, str]:
     """AI Sustainability Coach insights."""
     return {"insight": "Based on your recent transport logs, switching 2 trips to EV could save 15kg CO2e this week. You are on a 5-day streak!"}
 
 # Predictive Simulator
 @app.post("/api/simulate")
-def simulate_footprint(scenario: dict):
+def simulate_footprint(scenario: Dict[str, Any]) -> Dict[str, Any]:
     """Simulate future footprint."""
     savings = 0
     if scenario.get("ev_adoption"): savings += 150
@@ -441,7 +459,7 @@ def simulate_footprint(scenario: dict):
 
 # Leaderboard
 @app.get("/api/leaderboard")
-def get_leaderboard():
+def get_leaderboard() -> List[Dict[str, Any]]:
     """Global Leaderboards."""
     return [
         {"rank": 1, "user": "EcoWarrior99", "score": 980},
@@ -451,13 +469,13 @@ def get_leaderboard():
 
 # Community Impact
 @app.get("/api/community")
-def get_community_impact():
+def get_community_impact() -> Dict[str, int]:
     """Community Impact Dashboard."""
     return {"trees_saved": 15420, "cars_removed": 340, "energy_saved": 89000}
 
 # Weekly Challenges & Streaks
 @app.get("/api/challenges")
-def get_challenges():
+def get_challenges() -> Dict[str, Any]:
     """Weekly Challenges and Streaks system."""
     return {
         "streak": {"current": 5, "milestone": 7, "reward": "🔥 Green Streak Badge"},
@@ -471,7 +489,7 @@ def get_challenges():
 # PDF Report Generation (Mocked for Demo as HTML)
 from fastapi.responses import HTMLResponse
 @app.get("/api/report", response_class=HTMLResponse)
-def generate_report():
+def generate_report() -> HTMLResponse:
     """Generates a professional sustainability report."""
     html_content = """
     <html>
@@ -488,7 +506,7 @@ def generate_report():
         </body>
     </html>
     """
-    return html_content
+    return HTMLResponse(content=html_content)
 
 # Create static directory if it doesn't exist
 static_dir = os.path.join(os.path.dirname(__file__), "static")

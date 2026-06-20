@@ -1,6 +1,8 @@
+from typing import Dict, Any
+
 # Carbon emission factors (in kg CO2e per unit)
 
-EMISSION_FACTORS = {
+EMISSION_FACTORS: Dict[str, Dict[str, float]] = {
     # Transportation (per km)
     "transport": {
         "petrol_car": 0.171,      # kg CO2e per km
@@ -67,7 +69,7 @@ def calculate_consumption_emissions(category: str, quantity: int) -> float:
     factor = EMISSION_FACTORS["consumption"].get(category, 5.0)
     return quantity * factor
 
-def calculate_total_monthly_footprint(data: dict) -> dict:
+def calculate_total_monthly_footprint(data: Dict[str, Any]) -> Dict[str, float]:
     """
     Calculate full footprint breakdown.
     Expected data layout:
@@ -107,3 +109,4 @@ def calculate_total_monthly_footprint(data: dict) -> dict:
         "consumption": round(consumption_total, 2),
         "total": round(total, 2)
     }
+
