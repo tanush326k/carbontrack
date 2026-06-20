@@ -80,7 +80,7 @@ window.addEventListener("DOMContentLoaded", () => {
         navigator.serviceWorker.register('/sw.js');
     }
 
-    init3DEarth().catch(e => console.warn("3D Earth failed:", e));
+    init3DEarth();
     fetchAIAndCommunity();
 
     // Theme initialization and toggle

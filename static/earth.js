@@ -1,155 +1,256 @@
-// earth.js — dynamic OrbitControls import so a CDN failure does not crash the whole app module
+// earth.js — synchronous, uses global THREE + THREE.OrbitControls (loaded via classic script tag)
 let earthRenderer = null;
-let earthScene = null;
-let earthCamera = null;
 let earthAnimationId = null;
 let earthResizeObserver = null;
 
-export async function init3DEarth() {
+export function init3DEarth() {
     const container = document.getElementById('earth-container');
     if (!container) return;
 
-    // Dispose previous Earth if exists to prevent memory leaks
+    // Dispose previous Earth to prevent memory leaks on re-init
     if (earthRenderer) {
         if (earthAnimationId) cancelAnimationFrame(earthAnimationId);
-        earthRenderer.dispose();
-        if (typeof earthRenderer.forceContextLoss === 'function') {
-            earthRenderer.forceContextLoss();
-        }
+        try { earthRenderer.dispose(); } catch (_) {}
+        try { earthRenderer.forceContextLoss(); } catch (_) {}
         earthRenderer = null;
-        earthScene = null;
-        earthCamera = null;
         earthAnimationId = null;
     }
-
     if (earthResizeObserver) {
         earthResizeObserver.disconnect();
         earthResizeObserver = null;
     }
 
-    // Verify WebGL support
+    // Guard: THREE must be a global
+    if (typeof THREE === 'undefined') {
+        console.warn('THREE.js not loaded — skipping 3D Earth.');
+        const el = document.getElementById('earth-loading');
+        if (el) el.style.display = 'none';
+        return;
+    }
+
+    // Guard: WebGL support check
     try {
-        const testCanvas = document.createElement('canvas');
-        const gl = testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
-        if (!gl) throw new Error('WebGL not supported');
-    } catch (e) {
-        container.innerHTML = `<div id="earth-error" style="color: var(--text-secondary); text-align: center; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <i class="fa-solid fa-globe" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-            <p>3D Earth requires WebGL support.</p>
+        const t = document.createElement('canvas');
+        if (!t.getContext('webgl') && !t.getContext('experimental-webgl')) {
+            throw new Error('no webgl');
+        }
+    } catch (_) {
+        container.innerHTML = `<div style="color:var(--text-secondary);text-align:center;padding:2rem;height:100%;display:flex;align-items:center;justify-content:center;">
+            <span><i class="fa-solid fa-globe" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:.75rem;"></i>WebGL not supported in this browser.</span>
         </div>`;
         return;
     }
 
-    // Dynamically import OrbitControls so a CDN failure doesn't crash the module
-    let OrbitControls = null;
     try {
-        const mod = await import("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js");
-        OrbitControls = mod.OrbitControls;
-    } catch (e) {
-        console.warn("OrbitControls could not be loaded, continuing without it:", e);
-    }
+        const w = container.clientWidth > 0 ? container.clientWidth : 480;
+        const h = container.clientHeight > 0 ? container.clientHeight : 260;
 
-    // THREE must be available globally via the CDN script tag
-    if (typeof THREE === 'undefined') {
-        console.warn("THREE.js not available, skipping 3D Earth.");
-        const loadingElem = document.getElementById('earth-loading');
-        if (loadingElem) loadingElem.style.display = 'none';
-        return;
-    }
-
-    try {
+        // --- Scene Setup ---
         const scene = new THREE.Scene();
-        const w = container.clientWidth > 0 ? container.clientWidth : 300;
-        const h = container.clientHeight > 0 ? container.clientHeight : 180;
-        const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 1000);
+        camera.position.z = 6.5;
+
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(w, h);
-        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
+        // Replace loading spinner with canvas
         container.innerHTML = '';
         container.appendChild(renderer.domElement);
 
-        // Hide loading indicator immediately now that canvas is in the DOM
-        const loadingElem = document.getElementById('earth-loading');
-        if (loadingElem) loadingElem.style.display = 'none';
+        // --- Procedural Earth Texture (no external CDN required) ---
+        function makeEarthTexture() {
+            const c = document.createElement('canvas');
+            c.width = 1024; c.height = 512;
+            const ctx = c.getContext('2d');
 
-        // Add OrbitControls if available
-        let controls = null;
-        if (OrbitControls) {
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.minDistance = 5;
-            controls.maxDistance = 15;
+            // Ocean gradient
+            const ocean = ctx.createLinearGradient(0, 0, 0, 512);
+            ocean.addColorStop(0,   '#0a2540');
+            ocean.addColorStop(0.4, '#0e4080');
+            ocean.addColorStop(0.6, '#0e4080');
+            ocean.addColorStop(1,   '#0a2540');
+            ctx.fillStyle = ocean;
+            ctx.fillRect(0, 0, 1024, 512);
+
+            // Landmass patches (simplified continents)
+            const landColor = (a) => `rgba(22,${90 + a},45,0.85)`;
+
+            // Americas
+            ctx.fillStyle = landColor(10);
+            ctx.beginPath();
+            ctx.ellipse(200, 190, 60, 110, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(220, 360, 50, 80, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Europe / Africa
+            ctx.fillStyle = landColor(20);
+            ctx.beginPath();
+            ctx.ellipse(520, 170, 55, 70, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(530, 320, 55, 100, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Asia
+            ctx.fillStyle = landColor(15);
+            ctx.beginPath();
+            ctx.ellipse(720, 160, 120, 100, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Australia
+            ctx.fillStyle = landColor(5);
+            ctx.beginPath();
+            ctx.ellipse(820, 370, 55, 40, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ice caps
+            ctx.fillStyle = 'rgba(220,240,255,0.6)';
+            ctx.fillRect(0, 0, 1024, 40);
+            ctx.fillRect(0, 472, 1024, 40);
+
+            // Subtle ocean sparkle
+            ctx.fillStyle = 'rgba(80,160,255,0.08)';
+            for (let i = 0; i < 80; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * 1024, Math.random() * 512, Math.random() * 18 + 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return new THREE.CanvasTexture(c);
         }
 
-        // Create Earth with realistic texture and cloud layer
-        const textureLoader = new THREE.TextureLoader();
-        const earthTexture = textureLoader.load('https://threejs.org/examples/textures/earth_atmos_2048.jpg');
-        const material = new THREE.MeshStandardMaterial({
-            map: earthTexture,
-            roughness: 0.5,
-            metalness: 0.2,
-            emissive: 0x111111,
-            emissiveIntensity: 0.3
-        });
-        const geometry = new THREE.SphereGeometry(2.5, 32, 32);
-        const earth = new THREE.Mesh(geometry, material);
-        scene.add(earth);
+        function makeCloudTexture() {
+            const c = document.createElement('canvas');
+            c.width = 512; c.height = 256;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = 'transparent';
+            ctx.clearRect(0, 0, 512, 256);
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            for (let i = 0; i < 30; i++) {
+                ctx.beginPath();
+                ctx.ellipse(
+                    Math.random() * 512,
+                    Math.random() * 256,
+                    Math.random() * 60 + 20,
+                    Math.random() * 20 + 8,
+                    Math.random() * Math.PI,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+            return new THREE.CanvasTexture(c);
+        }
 
-        // Cloud layer
-        const cloudTexture = textureLoader.load('https://threejs.org/examples/textures/earth_clouds_1024.png');
-        const cloudMaterial = new THREE.MeshStandardMaterial({
-            map: cloudTexture,
+        // --- Earth Sphere ---
+        const earthTex = makeEarthTexture();
+        const earthGeo = new THREE.SphereGeometry(2.5, 48, 48);
+        const earthMat = new THREE.MeshPhongMaterial({
+            map: earthTex,
+            specular: new THREE.Color(0x2a6080),
+            shininess: 18,
+            emissive: new THREE.Color(0x0a1a2e),
+            emissiveIntensity: 0.15
+        });
+        const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+        scene.add(earthMesh);
+
+        // Subtle wireframe overlay for stylized look
+        const wireMat = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            wireframe: true,
             transparent: true,
-            opacity: 0.4,
+            opacity: 0.04
+        });
+        const wireMesh = new THREE.Mesh(new THREE.SphereGeometry(2.52, 24, 24), wireMat);
+        scene.add(wireMesh);
+
+        // --- Cloud Layer ---
+        const cloudTex = makeCloudTexture();
+        const cloudGeo = new THREE.SphereGeometry(2.56, 32, 32);
+        const cloudMat = new THREE.MeshPhongMaterial({
+            map: cloudTex,
+            transparent: true,
+            opacity: 0.5,
             depthWrite: false
         });
-        const cloudGeometry = new THREE.SphereGeometry(2.51, 32, 32);
-        const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-        scene.add(clouds);
+        const cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+        scene.add(cloudMesh);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // --- Atmosphere Glow ---
+        const atmGeo = new THREE.SphereGeometry(2.7, 32, 32);
+        const atmMat = new THREE.MeshBasicMaterial({
+            color: 0x1a8cff,
+            transparent: true,
+            opacity: 0.08,
+            side: THREE.BackSide
+        });
+        scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+        // --- Stars ---
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 800;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            starPos[i] = (Math.random() - 0.5) * 200;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, transparent: true, opacity: 0.7 });
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(5, 3, 5);
-        scene.add(dirLight);
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
-        hemiLight.position.set(0, 20, 0);
-        scene.add(hemiLight);
+        const sunLight = new THREE.DirectionalLight(0xfff4e0, 1.2);
+        sunLight.position.set(8, 4, 6);
+        scene.add(sunLight);
+        const rimLight = new THREE.DirectionalLight(0x4499ff, 0.3);
+        rimLight.position.set(-6, -2, -4);
+        scene.add(rimLight);
 
-        camera.position.z = 7;
+        // --- OrbitControls (from global script tag) ---
+        let controls = null;
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.minDistance = 4;
+            controls.maxDistance = 12;
+            controls.enablePan = false;
+            controls.autoRotate = false;
+        }
 
+        // --- Animation Loop ---
         function animate() {
             earthAnimationId = requestAnimationFrame(animate);
+            earthMesh.rotation.y += 0.0025;
+            cloudMesh.rotation.y += 0.003;
+            wireMesh.rotation.y += 0.0025;
             if (controls) controls.update();
-            earth.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
         animate();
 
-        // Resize observer
-        const resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                const rw = entry.contentRect.width;
-                const rh = entry.contentRect.height;
-                if (rw > 0 && rh > 0) {
-                    camera.aspect = rw / rh;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(rw, rh);
-                }
+        // --- Resize Observer ---
+        const ro = new ResizeObserver(() => {
+            const rw = container.clientWidth;
+            const rh = container.clientHeight;
+            if (rw > 0 && rh > 0) {
+                camera.aspect = rw / rh;
+                camera.updateProjectionMatrix();
+                renderer.setSize(rw, rh);
             }
         });
-        resizeObserver.observe(container);
-        earthResizeObserver = resizeObserver;
+        ro.observe(container);
+        earthResizeObserver = ro;
 
         earthRenderer = renderer;
-        earthScene = scene;
-        earthCamera = camera;
+
     } catch (err) {
-        console.error("3D Earth initialization failed:", err);
-        const loadingElem = document.getElementById('earth-loading');
-        if (loadingElem) loadingElem.style.display = 'none';
+        console.error('3D Earth initialization failed:', err);
+        const el = document.getElementById('earth-loading');
+        if (el) el.style.display = 'none';
     }
 }
