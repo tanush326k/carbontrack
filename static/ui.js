@@ -170,7 +170,3 @@ export function updateUIElements() {
     maybeShowLevelUpToast(xp, level);
 }
 
-export function renderMetricCards() {
-    // This function can be used to re-render metric cards if needed.
-    // Currently updateUIElements covers metric updates.
-}

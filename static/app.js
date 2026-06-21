@@ -5,6 +5,20 @@ import * as ui from './ui.js';
 import * as charts from './charts.js';
 import { init3DEarth } from './earth.js';
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
+
 // Activity types configuration
 const ACTIVITY_TYPES = {
     transport: [
@@ -137,6 +151,11 @@ window.addEventListener("DOMContentLoaded", () => {
             debouncedCalculate();
         });
     });
+
+    // Expose handlers to window for inline onclick attributes
+    window.handleDeleteLog = handleDeleteLog;
+    window.handleAdoptAction = handleAdoptAction;
+    window.handleRemoveAction = handleRemoveAction;
 });
 
 function setupCategoryHandler() {
@@ -213,8 +232,8 @@ function renderLogs(logs) {
 
         item.innerHTML = `
             <div class="log-details">
-                <span class="log-meta">${name}</span>
-                <span class="log-sub">${log.amount} ${getUnitSuffix(log.category)} &bull; ${log.date} ${log.notes ? `&bull; "${log.notes}"` : ''}</span>
+                <span class="log-meta">${escapeHTML(name)}</span>
+                <span class="log-sub">${log.amount} ${getUnitSuffix(log.category)} &bull; ${escapeHTML(log.date)} ${log.notes ? `&bull; "${escapeHTML(log.notes)}"` : ''}</span>
             </div>
             <div class="log-value-tag">
                 <span class="log-emissions">+${log.emissions_kg} kg</span>
@@ -248,13 +267,13 @@ function renderHabitsAndTips(tips, adopted) {
             card.className = "habit-card";
             card.innerHTML = `
                 <div class="card-content">
-                    <span class="card-title">${hab.title}</span>
-                    <span class="card-desc">${matchedTip.description || "Active green habit"}</span>
+                    <span class="card-title">${escapeHTML(hab.title)}</span>
+                    <span class="card-desc">${escapeHTML(matchedTip.description || "Active green habit")}</span>
                     <div class="card-badge-row">
                         <span class="badge-saving">-${hab.monthly_saving_kg} kg CO2e / mo</span>
                     </div>
                 </div>
-                <button class="card-remove-btn" onclick="handleRemoveAction('${hab.action_key}')" aria-label="Stop committing to ${hab.title}">
+                <button class="card-remove-btn" onclick="handleRemoveAction('${escapeHTML(hab.action_key)}')" aria-label="Stop committing to ${escapeHTML(hab.title)}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             `;
@@ -271,14 +290,14 @@ function renderHabitsAndTips(tips, adopted) {
             card.className = "tip-card";
             card.innerHTML = `
                 <div class="card-content">
-                    <span class="card-title">${tip.title}</span>
-                    <span class="card-desc">${tip.description}</span>
+                    <span class="card-title">${escapeHTML(tip.title)}</span>
+                    <span class="card-desc">${escapeHTML(tip.description)}</span>
                     <div class="card-badge-row">
                         <span class="badge-saving">-${tip.monthly_saving_kg} kg/mo</span>
-                        <span class="badge-difficulty">${tip.difficulty}</span>
+                        <span class="badge-difficulty">${escapeHTML(tip.difficulty)}</span>
                     </div>
                 </div>
-                <button class="card-action-btn" onclick="handleAdoptAction('${tip.key}')" aria-label="Commit to habit: ${tip.title}">Commit</button>
+                <button class="card-action-btn" onclick="handleAdoptAction('${escapeHTML(tip.key)}')" aria-label="Commit to habit: ${escapeHTML(tip.title)}">Commit</button>
             `;
             recommendedTipsList.appendChild(card);
         });
@@ -563,6 +582,11 @@ function renderApp() {
             const commCars = document.getElementById("comm-cars");
             if (commTrees) commTrees.textContent = community.trees_saved ?? 0;
             if (commCars) commCars.textContent = community.cars_removed ?? 0;
+        }
+
+        // Render doughnut chart
+        if (appSummary && appSummary.category_distribution) {
+            try { charts.renderDoughnutChart(appSummary.category_distribution); } catch (e) { console.warn('renderDoughnutChart error:', e); }
         }
     } catch (e) {
         console.error('renderApp critical error:', e);
