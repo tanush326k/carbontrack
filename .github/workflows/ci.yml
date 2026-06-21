@@ -7,18 +7,68 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  # ── Job 1: API Unit Tests (no browser required) ──────────────────────────
+  test-api:
+    name: API Unit Tests
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install fastapi uvicorn sqlalchemy pydantic pytest httpx
-    - name: Run tests
-      run: |
-        PYTHONPATH=${{ github.workspace }} pytest
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run API tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest tests/test_api.py -v
+
+  # ── Job 2: End-to-End Browser Tests (Playwright) ─────────────────────────
+  test-e2e:
+    name: E2E Browser Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium --with-deps
+
+      - name: Start FastAPI server in background
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          # Wait until the server is ready to accept connections
+          for i in {1..15}; do
+            curl -sf http://localhost:8000/api/health && break
+            echo "Waiting for server... ($i)"
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest tests/test_e2e.py -v
