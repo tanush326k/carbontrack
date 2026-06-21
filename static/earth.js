@@ -20,9 +20,9 @@ export function init3DEarth() {
         earthResizeObserver = null;
     }
 
-    // Guard: THREE must be a global
-    if (typeof THREE === 'undefined') {
-        console.warn('THREE.js not loaded — skipping 3D Earth.');
+    // Guard: THREE and OrbitControls must be loaded as globals
+    if (typeof THREE === 'undefined' || typeof THREE.OrbitControls === 'undefined') {
+        console.warn('THREE.js or OrbitControls not loaded — skipping 3D Earth.');
         const el = document.getElementById('earth-loading');
         if (el) el.style.display = 'none';
         return;
