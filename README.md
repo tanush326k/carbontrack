@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/logo.png" width="110"/>
-
 # 🌍 EcoTrace
 
 ### Intelligent Carbon Footprint Analytics Platform
